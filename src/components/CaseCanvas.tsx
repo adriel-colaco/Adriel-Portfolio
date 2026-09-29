@@ -28,6 +28,7 @@ import { projectByName, tagStyle, tagsBoxStyle, type Project, type TagsVariant }
 const scale = (frame: number) => (px: number) => `${((px * 100) / frame).toFixed(4)}cqw`;
 const u = scale(1440);
 const um = scale(360);
+const ut = scale(820);
 
 // Entrance timing (seconds), in the hero's motion language.
 const timing = (delay: number): CSSProperties => ({
@@ -228,7 +229,7 @@ function CaseDesktop({ data }: { data: Case }) {
   const works = moreWorksOf(data);
 
   return (
-    <div className="hidden w-full landscape-tablet:block" style={{ containerType: "inline-size" }}>
+    <div className="hidden w-full landscape-tablet:block portrait-tablet:hidden" style={{ containerType: "inline-size" }}>
       <ProjectCursor />
       <div
         className="relative w-full"
@@ -329,6 +330,129 @@ function CaseDesktop({ data }: { data: Case }) {
                 <WorkCard project={project} unit={u} imageHeight={448} titleSize={36} variant="desktop" frame={{ width: COL_W, canvas: 1440 }} />
               </div>
             ))}
+          </Reveal>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------- portrait tablet */
+
+// The desktop on the portrait tablet's 2 columns (820px frame, as the home's
+// TabletCanvas): the intro's two boxes stacked full width (the facts table
+// straight under the title box, one curtain, as on mobile — side by side they
+// would be too narrow for the longer facts), the blocks at the full content
+// width with their desktop proportions, then "More works" on the 2 columns.
+const CONTENT_W_T = 780;
+const COLS_T = [20, 420];
+const COL_W_T = 380;
+const TITLE_SIZE_TABLET = 64;
+const TITLE_BOX_T = 360; // the title box's height (at least)
+const INTRO_TABLET: IntroLayout = { height: (n) => TITLE_BOX_T + n * 60, title: 130, summary: 214, rowHeight: 60 };
+const WORK_IMAGE_T = 460;
+
+function CaseTablet({ data }: { data: Case }) {
+  const works = moreWorksOf(data);
+  const at = introAt(INTRO_TABLET, data.facts.length);
+
+  return (
+    <div className="hidden w-full portrait-tablet:block" style={{ containerType: "inline-size" }}>
+      <ProjectCursor />
+      <div
+        className="relative w-full"
+        style={{ paddingTop: `calc(var(--header-bottom) + ${ut(20)})`, paddingInline: ut(20), paddingBottom: ut(160) }}
+      >
+        <Grid cols={COLS_T} width={COL_W_T} unit={ut} />
+
+        <div className="relative flex flex-col" style={{ gap: ut(GAP) }}>
+          <Curtain at={BOX_AT} lineAt={LINE_AT}>
+            <div
+              className="relative flex flex-col justify-end overflow-clip border border-t-0 border-line bg-canvas"
+              style={{ minHeight: ut(TITLE_BOX_T), padding: ut(20), gap: ut(20) }}
+            >
+              {data.seals && <Seals seals={data.seals} unit={ut} width={36} textSize={17.6} side="left" inset={20} enter={sealsEnter} />}
+              <h1 className={`${DROP} font-serif leading-none text-ink`} style={{ fontSize: ut(TITLE_SIZE_TABLET), ...timing(at.title) }}>
+                <ItalicI>{data.title}</ItalicI>
+              </h1>
+              <p
+                className={`${DROP} font-mono text-muted`}
+                style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(at.summary) }}
+              >
+                {data.summary}
+              </p>
+            </div>
+
+            <dl
+              className="flex flex-col overflow-clip border border-t-0 border-line bg-canvas font-mono"
+              style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em" }}
+            >
+              {data.facts.map((fact, i) => (
+                <div
+                  key={fact.label}
+                  className={`${DROP} flex items-center justify-between ${i > 0 ? "border-t border-line" : ""}`}
+                  style={{ height: ut(60), paddingInline: ut(20), gap: ut(20), ...timing(at.row(i)) }}
+                >
+                  <dt className="whitespace-nowrap text-muted">{fact.label}</dt>
+                  <dd className="whitespace-nowrap text-black">
+                    <FactValue fact={fact} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </Curtain>
+
+          {/* Image blocks, row by row: the desktop's rows scaled to the content width */}
+          {data.rows.map((row, r) => {
+            const n = row.images.length;
+            const cellW = (CONTENT_W_T - GAP * (n - 1)) / n;
+            const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_T) / CONTENT_W;
+            return (
+              <div key={r} className="flex" style={{ gap: ut(GAP), height: ut(height) }}>
+                {row.images.map((block, i) => (
+                  <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: ut(cellW), backgroundColor: BLOCK_BG }}>
+                    <BlockMedia block={block} sizes={`${Math.round((cellW / 820) * 100)}vw`} eager={r === 0} />
+                  </Block>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* More works: the title row across both columns, the cards on the
+            2 columns, "See more projects" in the cell after the last card */}
+        {works.length > 0 && (
+          <Reveal className="relative" style={{ marginTop: ut(160) }} rootMargin="0px 0px -20% 0px">
+            <div
+              className="rise flex items-center justify-between text-muted"
+              style={{ height: ut(ROW), paddingInline: ut(20), fontSize: ut(18), lineHeight: 1.4, ...timing(0) }}
+            >
+              <h2 className="whitespace-nowrap font-mono font-normal [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
+                More works
+              </h2>
+              <ArrowIcon glyph="down" style={{ width: ut(24), height: ut(24) }} />
+            </div>
+            <div
+              aria-hidden
+              className="draw bg-line"
+              style={{ marginTop: ut(20 - (ROW - LABEL_CAP) / 2), height: 1, ...timing(0.1) }}
+            />
+
+            <div
+              className="grid"
+              style={{ marginTop: ut(20), gridTemplateColumns: `repeat(2, ${ut(COL_W_T)})`, columnGap: ut(GAP), rowGap: ut(80) }}
+            >
+              {works.map((project, i) => (
+                <div key={project.name} className="rise" style={timing(0.15 + i * STAGGER)}>
+                  <WorkCard project={project} unit={ut} imageHeight={WORK_IMAGE_T} titleSize={32} variant="desktop" frame={{ width: COL_W_T, canvas: 820 }} />
+                </div>
+              ))}
+              <div className="flex flex-col justify-end" style={{ height: ut(WORK_IMAGE_T) }}>
+                <div className="rise" style={{ marginInline: ut(20), height: ut(56), ...timing(0.3) }}>
+                  <HeroCTA label="See more projects" icon="plus" href="/" fontSize={ut(28)} iconSize={ut(24)} paddingLeft={ut(24)} paddingRight={ut(20)} />
+                </div>
+              </div>
+            </div>
           </Reveal>
         )}
       </div>
@@ -445,6 +569,7 @@ export default function CaseCanvas({ data }: { data: Case }) {
   return (
     <>
       <CaseDesktop data={data} />
+      <CaseTablet data={data} />
       <CaseMobile data={data} />
     </>
   );

@@ -1,11 +1,22 @@
 @import "tailwindcss";
 
-/* Canvas switch by orientation: the desktop canvas is used on landscape tablets
-   and desktops; portrait tablets (incl. the 1024px-wide iPad Pro) and all phones
-   use the mobile canvas. The min-height keeps phones held in landscape on the
-   mobile canvas, since their viewport height stays well below a tablet's. */
+/* Canvas switch: the desktop canvas (and the desktop header) on desktops and
+   on tablets either way up; phones use the mobile canvas. Landscape needs a
+   tablet's height (phones held sideways stay under 500px); portrait needs a
+   tablet's width (phones stay under ~430px, the iPad mini is 744). The name
+   is historical — it started out landscape-only. */
 @custom-variant landscape-tablet {
-  @media (orientation: landscape) and (min-height: 500px) {
+  @media (orientation: landscape) and (min-height: 500px), (orientation: portrait) and (min-width: 700px) {
+    @slot;
+  }
+}
+
+/* Portrait tablets alone: they keep the desktop header, but get their own
+   2-column canvases (TabletCanvas, the case's CaseTablet, the footer's tablet
+   layout) in place of the desktop ones. Registered after landscape-tablet, so
+   `portrait-tablet:hidden` wins over `landscape-tablet:block`. */
+@custom-variant portrait-tablet {
+  @media (orientation: portrait) and (min-width: 700px) {
     @slot;
   }
 }
@@ -44,14 +55,35 @@
   --ease-fade: cubic-bezier(0.45, 0, 0.55, 1);
   --dur-hover: 0.5s;
 
-  /* Bottom edge of the fixed header pill (Navbar: top-[10px] + h-[66px], or
-     lg:top-5 + lg:h-20). The desktop hero centres its heading below it. */
+  /* Bottom edge of the fixed header pill (Navbar: top-[10px] + h-[66px], or, on the desktop canvas,
+     top 20px + height 80px, scaled by --nav-zoom). The desktop hero centres its
+     heading below it. */
   --header-bottom: 76px;
+  --nav-zoom: 1;
 }
 
-@media (width >= 64rem) {
+/* The desktop header's metrics, on the same switch as the canvas. */
+@media (orientation: landscape) and (min-height: 500px), (orientation: portrait) and (min-width: 700px) {
   :root {
-    --header-bottom: 100px;
+    /* The header's scale on big screens: 1 up to Full HD, then growing with
+       the width — but, like the hero heading, no more than a 16:9 screen of
+       the same height would give (so ultra-wides don't inflate it).
+       tan(atan2(a, b)) is a / b as a plain number. */
+    --nav-zoom: max(1, tan(atan2(min(100vw, 100vh * 16 / 9), 1920px)));
+    /* The open menu's contents, designed on the 1440 frame, scale from there
+       on the same terms, so on big screens the full-screen panel isn't a
+       sea of space around 1440-sized links. */
+    --menu-zoom: max(1, tan(atan2(min(100vw, 100vh * 16 / 9), 1440px)));
+    --header-bottom: calc(100px * var(--nav-zoom));
+  }
+}
+
+/* Portrait tablets: the desktop header scaled with the width instead — 80% of
+   its desktop size on the 11" iPad (820 wide), full size by the 13" (1032),
+   so it stays in proportion to the tablet canvas under it. */
+@media (orientation: portrait) and (min-width: 700px) {
+  :root {
+    --nav-zoom: tan(atan2(100vw, 1025px));
   }
 }
 
@@ -706,6 +738,22 @@ html:not([data-site-loaded]) body:has(.site-loader[data-state="loading"]) :is(.s
 /* Already shown this visit (see SiteLoader): never paint it again. */
 html[data-site-loaded] .site-loader {
   display: none;
+}
+
+/* The footer's desktop mascot (FooterReveal): width-based like the canvas,
+   but never bigger than a 16:9 screen of the same height would make it (so
+   ultra-wides don't inflate it) — and on squarer screens, 3:2 and narrower
+   (landscape tablets), sized by the height, so it isn't lost in the taller
+   footer. Notebooks (16:10) and wider are unchanged. */
+.footer-mascot {
+  width: min(var(--mascot-w), var(--mascot-w-vh));
+  height: min(var(--mascot-h), var(--mascot-h-vh));
+}
+@media (max-aspect-ratio: 3/2) {
+  .footer-mascot {
+    width: var(--mascot-w-vh);
+    height: var(--mascot-h-vh);
+  }
 }
 
 /* While the page-transition curtain covers the screen (PageTransition), hold

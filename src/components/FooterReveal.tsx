@@ -60,6 +60,12 @@ function softCircle(r: number, feather: number) {
 // grid instead of over blank canvas.
 const FRAME = 1440;
 const u = (px: number) => `${((px * 100) / FRAME).toFixed(4)}cqw`;
+// The desktop mascot's size by the screen's height instead: what it would be
+// on a 16:9 screen of that height. It caps the mascot on ultra-wides (where the
+// width outgrows the height) and sizes it on landscape tablets, whose squarer
+// screens leave the width-based size looking small (.footer-mascot,
+// globals.css).
+const byHeight = (px: number) => `${((px * 100 * 16) / (FRAME * 9)).toFixed(4)}vh`;
 const COLUMNS = [20, 375, 730, 1085];
 const COLUMN_WIDTH = 335;
 
@@ -69,6 +75,15 @@ const FRAME_M = 360;
 const um = (px: number) => `${((px * 100) / FRAME_M).toFixed(4)}cqw`;
 const COLUMNS_M = [10, 97.5, 185, 272.5];
 const COLUMN_WIDTH_M = 77.5;
+
+// Portrait-tablet scale (820px frame) + its 2-column grid, mirroring TabletCanvas.
+const FRAME_T = 820;
+const ut = (px: number) => `${((px * 100) / FRAME_T).toFixed(4)}cqw`;
+const COLUMNS_T = [20, 420];
+const COLUMN_WIDTH_T = 380;
+// The tablet's mascot and "Let's talk?" a size up from the desktop's, to hold
+// the tall screen: the title then spans most of the width.
+const MASCOT_SCALE_T = 1.45;
 
 /**
  * The full-bleed blue footer, revealed as a circle that swells out of the point
@@ -187,8 +202,16 @@ export default function FooterReveal() {
         <span
           key={left}
           aria-hidden
-          className="absolute top-0 bottom-0 hidden border-x border-line landscape-tablet:block"
+          className="absolute top-0 bottom-0 hidden border-x border-line landscape-tablet:block portrait-tablet:hidden"
           style={{ left: u(left), width: u(COLUMN_WIDTH) }}
+        />
+      ))}
+      {COLUMNS_T.map((left) => (
+        <span
+          key={`t-${left}`}
+          aria-hidden
+          className="absolute top-0 bottom-0 hidden border-x border-line portrait-tablet:block"
+          style={{ left: ut(left), width: ut(COLUMN_WIDTH_T) }}
         />
       ))}
       {COLUMNS_M.map((left) => (
@@ -204,14 +227,27 @@ export default function FooterReveal() {
           lives inside it so it's revealed together with the flood. */}
       <div ref={ref} className="absolute inset-0 bg-ink">
         {/* Desktop layout */}
-        <div className="hidden h-full landscape-tablet:block">
+        <div className="hidden h-full landscape-tablet:block portrait-tablet:hidden">
           {/* Mascot pinned to the top of the section (as in Figma), its eyes
               tracking the cursor. */}
           <MascotFace
-            className="absolute"
-            style={{ left: u(41), top: u(40), width: u(166.323 * MASCOT_SCALE), height: u(191.633 * MASCOT_SCALE) }}
+            className="footer-mascot absolute"
+            style={
+              {
+                left: u(41),
+                top: u(40),
+                "--mascot-w": u(166.323 * MASCOT_SCALE),
+                "--mascot-h": u(191.633 * MASCOT_SCALE),
+                "--mascot-w-vh": byHeight(166.323 * MASCOT_SCALE),
+                "--mascot-h-vh": byHeight(191.633 * MASCOT_SCALE),
+              } as CSSProperties
+            }
           />
           <FooterContent />
+        </div>
+        {/* Portrait-tablet layout */}
+        <div className="hidden h-full portrait-tablet:block">
+          <TabletFooterContent />
         </div>
         {/* Mobile layout */}
         <div className="h-full landscape-tablet:hidden">
@@ -413,7 +449,6 @@ function MobileFooterContent() {
     >
       {/* Mascot at the top */}
       <MascotFace
-        followScroll
         className={`relative shrink-0 ${mascot.className}`}
         style={{ width: um(131), height: um(150.93), ...mascot.style }}
       />
@@ -464,6 +499,136 @@ function MobileFooterContent() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Portrait-tablet footer (820px frame): the desktop's pieces, stacked as on
+ * phones — the mascot at the top; "Let's talk?", the two pills side by side
+ * under it, the divider and the ©2026 / social row at the bottom. Same
+ * entrance choreography as the desktop version.
+ */
+function TabletFooterContent() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (prefersReducedMotion()) {
+      const id = requestAnimationFrame(() => {
+        setReduced(true);
+        setInView(true);
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    const footer = el.closest("footer") ?? el;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setInView(true);
+            io.disconnect();
+          }
+        }
+      },
+      { threshold: 0.5 },
+    );
+    io.observe(footer);
+    return () => io.disconnect();
+  }, []);
+
+  const enter = entrance(inView, reduced);
+  const mascot = enter(0.05);
+  const divider = enter(0.55, "draw");
+  const bottomRow = enter(0.7);
+
+  return (
+    <div
+      ref={rootRef}
+      className="flex h-full flex-col justify-between"
+      style={{ paddingInline: ut(40), paddingTop: ut(40), paddingBottom: ut(34) }}
+    >
+      <MascotFace
+        className={`relative shrink-0 ${mascot.className}`}
+        style={{ width: ut(166.323 * MASCOT_SCALE_T), height: ut(191.633 * MASCOT_SCALE_T), ...mascot.style }}
+      />
+
+      <div className="flex flex-col" style={{ gap: ut(60) }}>
+        <div className="flex flex-col" style={{ gap: ut(40) }}>
+          <h2
+            className="whitespace-nowrap font-serif [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]"
+            style={{ fontSize: ut(200), lineHeight: 1, color: FG }}
+          >
+            {inView && <SplitText text="Let's talk?" stagger={0.09} startDelay={0.05} />}
+          </h2>
+          <div className="flex" style={{ height: ut(156), gap: ut(20) }}>
+            <TabletPill href="#" label="E-mail" enter={enter(0.32)}>
+              <EmailIcon style={{ width: ut(40.8), height: ut(40.8) }} />
+            </TabletPill>
+            <TabletPill href="#" label="WhatsApp" enter={enter(0.42)}>
+              <WhatsAppIcon style={{ width: ut(36.4), height: ut(36.4) }} />
+            </TabletPill>
+          </div>
+        </div>
+
+        <div className="flex flex-col" style={{ gap: ut(30) }}>
+          {/* Full-bleed: pulled out past the side padding, edge to edge. */}
+          <div
+            aria-hidden
+            className={divider.className}
+            style={{ height: "1px", marginInline: `calc(-1 * ${ut(40)})`, backgroundColor: FG, ...divider.style }}
+          />
+          <div className="flex items-center justify-between">
+            <p className="font-mono whitespace-nowrap" style={{ fontSize: ut(18), lineHeight: 1.4, color: FG }}>
+              {inView && <SplitText text="©2026" stagger={0.07} startDelay={0.7} />}
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/figma/footer-socials.svg"
+              alt="Social media"
+              className={`block ${bottomRow.className}`}
+              style={{ width: ut(197.338), height: ut(20), ...bottomRow.style }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The desktop's contact pill (ContactPill) on the tablet frame. */
+function TabletPill({
+  href,
+  label,
+  children,
+  enter,
+}: {
+  href: string;
+  label: string;
+  children: ReactNode;
+  enter: Entrance;
+}) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const contentRef = useRef<HTMLSpanElement>(null);
+  useMagnetPull(ref, contentRef);
+
+  return (
+    <a
+      ref={ref}
+      href={href}
+      data-cursor-magnet
+      className={`footer-pill flex h-full flex-1 items-center justify-center rounded-full border font-serif will-change-transform ${enter.className}`}
+      style={enter.style}
+    >
+      <span ref={contentRef} className="flex items-center" style={{ gap: ut(20) }}>
+        <span className="whitespace-nowrap" style={{ fontSize: ut(45), lineHeight: 1 }}>
+          {label}
+        </span>
+        {children}
+      </span>
+    </a>
   );
 }
 
@@ -605,18 +770,32 @@ const GAZE_REACH = 78;
 // is placed, in px — far enough that the pupils ride their eye-white edges.
 const GAZE_FAR = 2000;
 
-function MascotFace({
-  className,
-  style,
-  followScroll = false,
-}: {
-  className?: string;
-  style?: CSSProperties;
-  /** Phones, where there's no pointer to follow: the eyes follow the scroll
-   *  instead — looking up as the footer comes in, turning round to look down
-   *  at the contact pills by the end of the page. */
-  followScroll?: boolean;
-}) {
+// A pointer that hovers (a mouse or a trackpad — an iPad's included): then the
+// eyes follow it. Without one (touch only) there's nothing to follow, so they
+// follow the scroll instead. By capability, not by layout, so a tablet with a
+// trackpad gets the cursor whichever layout it shows.
+const HOVER_POINTER = "(hover: hover) and (pointer: fine)";
+
+/** Whether there's a hovering pointer, kept live (a trackpad can come and go). */
+function useHoverPointer() {
+  const [has, setHas] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia(HOVER_POINTER);
+    const sync = () => setHas(mq.matches);
+    const id = requestAnimationFrame(sync);
+    mq.addEventListener("change", sync);
+    return () => {
+      cancelAnimationFrame(id);
+      mq.removeEventListener("change", sync);
+    };
+  }, []);
+  return has;
+}
+
+function MascotFace({ className, style }: { className?: string; style?: CSSProperties }) {
+  // No hovering pointer: the eyes follow the scroll — looking up as the footer
+  // comes in, turning round to look down at the contact pills by the end.
+  const followScroll = !useHoverPointer();
   const rootRef = useRef<HTMLDivElement>(null);
   const leftRef = useRef<SVGCircleElement>(null);
   const rightRef = useRef<SVGCircleElement>(null);

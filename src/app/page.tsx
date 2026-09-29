@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import DesktopCanvas from "@/components/DesktopCanvas";
 import MobileCanvas from "@/components/MobileCanvas";
+import TabletCanvas from "@/components/TabletCanvas";
 import FooterReveal from "@/components/FooterReveal";
 import SiteLoader from "@/components/SiteLoader";
 import { EntranceScope } from "@/components/Entrance";
@@ -20,7 +21,10 @@ export default function Home() {
       {/* Landscape tablets + desktop: pixel-exact 1440px Figma canvas, scaled proportionally */}
       <DesktopCanvas />
 
-      {/* Portrait tablets + all phones: pixel-exact 360px Figma mobile canvas, scaled proportionally */}
+      {/* Portrait tablets: the desktop canvas on 2 columns (820px frame) */}
+      <TabletCanvas />
+
+      {/* Phones: pixel-exact 360px Figma mobile canvas, scaled proportionally */}
       <main className="landscape-tablet:hidden">
         <MobileCanvas />
       </main>

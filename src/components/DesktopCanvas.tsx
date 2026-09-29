@@ -83,6 +83,12 @@ const CARDS: Card[] = [
 
 // Only the first row is on screen at load, so only it takes part in the hero
 // entrance — left to right, like the rest of the cascade.
+// The hero heading: 96px on the 1440 frame, scaling with the width — but no
+// bigger than it would be on a 16:9 screen of the same height, so on
+// ultra-wide screens (where the width outgrows the height) it stops growing
+// instead of filling the two middle columns. 16:9 and taller: unchanged.
+const HERO_SIZE = `min(${u(96)}, ${((96 / FRAME) * 100 * (16 / 9)).toFixed(4)}vh)`;
+
 // How long after its card starts entering a card's seals drop in.
 const SEALS_LAG = 0.4;
 const FIRST_ROW_CARDS = CARDS.filter((card) => card.top === FIRST_ROW).sort((a, b) => a.left - b.left);
@@ -177,7 +183,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
 
 export default function DesktopCanvas() {
   return (
-    <div className="hidden w-full landscape-tablet:block" style={{ containerType: "inline-size" }}>
+    <div className="hidden w-full landscape-tablet:block portrait-tablet:hidden" style={{ containerType: "inline-size" }}>
       <ProjectCursor />
       <div className="relative w-full" style={{ height: `calc(${ANCHOR} + ${u(CANVAS_BOTTOM - FIRST_ROW)})` }}>
         {/* Background grid: the 4 columns themselves, stroked full-height */}
@@ -205,7 +211,7 @@ export default function DesktopCanvas() {
             height: `calc(${ANCHOR} - var(--header-bottom))`,
           }}
         >
-          <HeroHeading className="font-serif text-ink" style={{ fontSize: u(96), lineHeight: 1 }} />
+          <HeroHeading className="font-serif text-ink" style={{ fontSize: HERO_SIZE, lineHeight: 1 }} />
 
           {/* "Get in touch" CTA 40px under the heading (Figma 31:67), rising
               in after it. The wrapper carries the entrance so it never fights

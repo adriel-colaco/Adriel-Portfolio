@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de telas</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f4f4f5; --fg: #18181b; --muted: #71717a; --btn: #ffffff; --line: #d4d4d8; --on: #001fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #18181b; --fg: #f4f4f5; --muted: #a1a1aa; --btn: #27272a; --line: #3f3f46; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.4 ui-sans-serif, system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  button { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--btn); color: var(--fg); cursor: pointer; }
+  button[aria-pressed="true"] { background: var(--on); border-color: var(--on); color: #fff; }
+  .info { margin-left: auto; color: var(--muted); }
+  #stage { padding: 16px; }
+  #frame-box { overflow: hidden; border: 1px solid var(--line); background: #fff; }
+  iframe { border: 0; transform-origin: 0 0; display: block; }
+</style>
+</head>
+<body>
+<header>
+  <span id="sizes"></span>
+  <button id="page">Página: home</button>
+  <span class="info" id="info"></span>
+</header>
+<div id="stage"><div id="frame-box"><iframe id="f" title="Site simulado"></iframe></div></div>
+<script>
+  const SIZES = [
+    ["iPad 11\" vertical 820×1180", 820, 1180],
+    ["iPad 11\" horizontal 1180×820", 1180, 820],
+    ["iPad Pro 11\" vertical 834×1210", 834, 1210],
+    ["iPad Pro 11\" horizontal 1210×834", 1210, 834],
+    ["iPad Pro 13\" vertical 1032×1376", 1032, 1376],
+    ["iPad Pro 13\" horizontal 1376×1032", 1376, 1032],
+    ["Notebook 1280×720", 1280, 720],
+    ["Notebook 1366×768", 1366, 768],
+    ["MacBook 1440×900", 1440, 900],
+    ["Full HD 1920×1080", 1920, 1080],
+    ["QHD 2560×1440", 2560, 1440],
+    ["Ultra wide 2560×1080", 2560, 1080],
+    ["Ultra wide 3440×1440", 3440, 1440],
+  ];
+  const PAGES = [["home", "/"], ["case", "/cases/onprofit"]];
+  let size = SIZES[0], page = 0;
+  const f = document.getElementById("f"), box = document.getElementById("frame-box");
+  const sizesEl = document.getElementById("sizes"), info = document.getElementById("info");
+  const buttons = SIZES.map((s) => {
+    const b = document.createElement("button");
+    b.textContent = s[0];
+    b.onclick = () => { size = s; render(); };
+    sizesEl.appendChild(b); sizesEl.append(" ");
+    return b;
+  });
+  document.getElementById("page").onclick = (e) => { page = (page + 1) % PAGES.length; e.target.textContent = "Página: " + PAGES[page][0]; f.src = PAGES[page][1]; };
+  function render() {
+    const [, w, h] = size;
+    buttons.forEach((b, i) => b.setAttribute("aria-pressed", SIZES[i] === size));
+    const availW = document.getElementById("stage").clientWidth - 32 - 2;
+    const availH = window.innerHeight - document.querySelector("header").offsetHeight - 32 - 2;
+    const scale = Math.min(1, availW / w, availH / h);
+    f.style.width = w + "px"; f.style.height = h + "px";
+    f.style.transform = `scale(${scale})`;
+    box.style.width = Math.round(w * scale) + 2 + "px"; box.style.height = Math.round(h * scale) + 2 + "px";
+    info.textContent = `${w}×${h} · mostrado a ${Math.round(scale * 100)}% · role dentro da moldura`;
+  }
+  f.src = PAGES[0][1];
+  addEventListener("resize", render);
+  render();
+</script>
+</body>
+</html>

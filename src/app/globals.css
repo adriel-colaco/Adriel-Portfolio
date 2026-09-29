@@ -1,0 +1,741 @@
+@import "tailwindcss";
+
+/* Canvas switch by orientation: the desktop canvas is used on landscape tablets
+   and desktops; portrait tablets (incl. the 1024px-wide iPad Pro) and all phones
+   use the mobile canvas. The min-height keeps phones held in landscape on the
+   mobile canvas, since their viewport height stays well below a tablet's. */
+@custom-variant landscape-tablet {
+  @media (orientation: landscape) and (min-height: 500px) {
+    @slot;
+  }
+}
+
+@theme inline {
+  /* Design tokens from the Figma file */
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+
+  --font-serif: var(--font-instrument-serif);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  color-scheme: light; /* the site only has a light theme */
+  --canvas: #eaeaea;
+  --ink: #001fff;
+  --muted: #858587;
+  --line: #d4d4d8;
+
+  /* Motion — the site's rhythm, in two curves (intro.ts mirrors them for
+     inline styles):
+     - enter: content appearing (words and blocks rising from their masks,
+       hairlines drawing, curtains, the footer's pieces). A gentle start, then
+       a long, soft landing. Used with --dur-enter.
+     - ui: the interface answering (menu, header, hovers). Reacts at once, then
+       settles. Used with --dur-ui for anything that moves or resizes.
+     Colour changes (hovers, fades) dissolve instead: --ease-fade, easing in
+     and out evenly, over --dur-hover. */
+  --ease-enter: cubic-bezier(0.25, 0.1, 0.1, 1);
+  --dur-enter: 1.4s;
+  --ease-ui: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-ui: 0.8s;
+  --ease-fade: cubic-bezier(0.45, 0, 0.55, 1);
+  --dur-hover: 0.5s;
+
+  /* Bottom edge of the fixed header pill (Navbar: top-[10px] + h-[66px], or
+     lg:top-5 + lg:h-20). The desktop hero centres its heading below it. */
+  --header-bottom: 76px;
+}
+
+@media (width >= 64rem) {
+  :root {
+    --header-bottom: 100px;
+  }
+}
+
+/* Tailwind v4 leaves buttons on the default arrow; give them the hand, like
+   links (the menu toggle, and any button to come). */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+body {
+  background: var(--canvas);
+  color: var(--muted);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Infinite logo marquee */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+/* SplitText — word-by-word rise reveal (text expands upward from a mask) */
+@keyframes split-rise {
+  from {
+    transform: translateY(150%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.split-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  /* Breathing room so accents/descenders (é, ã, ç, g) aren't clipped at rest —
+     and on the sides, italic overhangs (the hero's "graphics" swings its g
+     ~0.07em left of the word box) — compensated by negative margin so line
+     and word spacing are untouched. */
+  padding: 0.12em 0.12em 0.22em;
+  margin: -0.12em -0.12em -0.22em;
+}
+
+.split-word {
+  display: inline-block;
+  transform: translateY(150%);
+  animation-name: split-rise;
+  animation-timing-function: var(--ease-enter);
+  animation-fill-mode: both;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .split-word {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* "_" cursor of the hero's typed word (TypingWord): hidden until the typing
+   starts, then solid while letters go in or out, and blinking on/off — a hard
+   blink, 0.5s on / 0.5s off, like a real text cursor — while a word holds. */
+@keyframes typing-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* No gap before it: after the longest word ("interfaces") the line already
+   ends at the heading's edge, and the underscore sits low enough not to touch
+   its last letter. */
+.typing-cursor {
+  display: inline-block;
+  font-style: normal;
+  opacity: 0;
+}
+.typing-cursor[data-active="true"] {
+  opacity: 1;
+}
+.typing-cursor[data-active="true"][data-busy="false"] {
+  animation: typing-blink 1s steps(1, end) infinite;
+}
+
+/* Project cursor — trailing ink dot: expands into the spinning "Abrir case" badge over a card; magnets into the menu button */
+@keyframes cursor-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.project-cursor {
+  opacity: 0;
+  transition: opacity var(--dur-hover) var(--ease-fade);
+}
+
+.project-cursor.is-visible {
+  opacity: 1;
+}
+
+/* The trailing dot floats above the header (its base z-[60] > navbar z-50), but
+   once expanded into the badge it tucks beneath the header instead of covering it. */
+.project-cursor.is-hovering {
+  z-index: 40;
+}
+
+/* Magnet: while captured by the menu button, the dot glides to its center
+   (handled in JS) and fades out, as if absorbed. Fades back in on release. */
+.project-cursor.is-magnet {
+  opacity: 0;
+}
+
+/* Hold the menu button in its hover look while the magnet holds it captured,
+   even when the pointer sits in the padded zone just outside the button. */
+[data-cursor-magnet][data-magnet-active] {
+  background-color: #1e1e1e;
+}
+/* (The menu button's bars only shorten while it's closed — open, they're the X.) */
+[data-cursor-magnet][data-magnet-active]:not([aria-expanded="true"]) .nav-bar-top {
+  width: 25px;
+}
+[data-cursor-magnet][data-magnet-active]:not([aria-expanded="true"]) .nav-bar-bottom {
+  width: 12px;
+}
+
+/* Trailing dot reads off-white over dark sections (e.g. the blue footer)
+   instead of its default ink blue. */
+.project-cursor.is-dark .cursor-disc {
+  background-color: #e0e0e0 !important;
+}
+
+/* Footer contact pills: hovering — or the cursor magnet grabbing them, like the
+   menu button — fills them off-white with blue text + icons (icons inherit via
+   currentColor). */
+.footer-pill {
+  color: #e0e0e0;
+  border-color: #e0e0e0;
+  background-color: transparent;
+  transition:
+    background-color var(--dur-hover) var(--ease-fade),
+    color var(--dur-hover) var(--ease-fade),
+    border-color var(--dur-hover) var(--ease-fade);
+}
+.footer-pill:hover,
+.footer-pill[data-magnet-active] {
+  background-color: #e0e0e0;
+  color: #001fff;
+  border-color: #e0e0e0;
+}
+
+/* Hero "Get in Touch" pill: white with blue label/icon; hovering (or the cursor
+   magnet grabbing it) fades it to blue with a white label, like the menu
+   button's colour fade. */
+.hero-cta {
+  background-color: #ffffff;
+  color: #001fff;
+  transition:
+    background-color var(--dur-hover) var(--ease-fade),
+    color var(--dur-hover) var(--ease-fade);
+}
+.hero-cta:hover,
+.hero-cta[data-magnet-active] {
+  background-color: #001fff;
+  color: #ffffff;
+}
+
+/* On the same cue the icon turns: the ↗ tips over to point right (→), the
+   "+" spins a quarter turn and lands looking just as it was. `rotate`, not
+   `transform`, so it adds to the magnet's pull (useMagnetPull sets the
+   transform) instead of replacing it. */
+.hero-cta-tilt,
+.hero-cta-spin {
+  transition: rotate var(--dur-ui) var(--ease-ui);
+}
+.hero-cta:hover .hero-cta-tilt,
+.hero-cta[data-magnet-active] .hero-cta-tilt {
+  rotate: 45deg;
+}
+.hero-cta:hover .hero-cta-spin,
+.hero-cta[data-magnet-active] .hero-cta-spin {
+  rotate: 90deg;
+}
+
+/* Ink disc: a small trailing dot at rest, expands to full size over a card.
+   The badge keeps its own springy overshoot on purpose (the one playful
+   exception to the site's two curves): it's a pointer toy, not content. */
+.cursor-disc {
+  transform: scale(0.12);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.project-cursor.is-hovering .cursor-disc {
+  transform: scale(1);
+}
+
+/* Arrow only shows once the disc has grown into the badge */
+.cursor-arrow {
+  opacity: 0;
+  transition: opacity var(--dur-hover) var(--ease-fade);
+}
+
+.project-cursor.is-hovering .cursor-arrow {
+  opacity: 1;
+}
+
+/* Ring scales/fades in as the dot morphs into the badge */
+.cursor-ring {
+  opacity: 0;
+  transform: scale(0.5);
+  transform-origin: center;
+  transition:
+    opacity var(--dur-hover) var(--ease-fade),
+    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.project-cursor.is-hovering .cursor-ring {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Continuous spin lives on an inner group so it never fights the reveal scale */
+.cursor-ring-spin {
+  /* Spin about the ring's own centre (the viewBox centre), not the text's box. */
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: cursor-spin 9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-disc,
+  .cursor-arrow,
+  .cursor-ring {
+    transition: none;
+  }
+  .cursor-ring-spin {
+    animation: none;
+  }
+}
+
+/* Portrait "curtain" reveal — the image is wiped into view from the top edge
+   downward as it scrolls into view. Armed (clipped) only once JS is ready, so
+   without JS the portrait stays fully visible. */
+@keyframes curtain-reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.curtain-reveal[data-armed] {
+  clip-path: inset(0 0 100% 0);
+}
+
+.curtain-reveal[data-armed].is-revealed {
+  animation: curtain-reveal var(--dur-enter) var(--ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .curtain-reveal[data-armed],
+  .curtain-reveal[data-armed].is-revealed {
+    clip-path: none;
+    animation: none;
+  }
+}
+
+/* Hero entrance (timeline in intro.ts): the same move as SplitText's words — the
+   element rises into place from behind a mask along its own bottom edge — but
+   with no wrapper. The clip-path is the mask: its bottom inset shrinks exactly as
+   fast as the element rises, so the mask edge stays put while the element slides
+   up through it. The mask bleeds a little past the element (--rise-bleed) so
+   descenders and focus rings aren't cut as it settles; with `backwards` fill,
+   nothing (clip or transform) lingers once it has landed. */
+@keyframes rise {
+  from {
+    transform: translateY(calc(100% + var(--rise-bleed)));
+    clip-path: inset(0 calc(-1 * var(--rise-bleed)) 100% calc(-1 * var(--rise-bleed)));
+  }
+  to {
+    transform: translateY(0);
+    clip-path: inset(calc(-1 * var(--rise-bleed)));
+  }
+}
+
+.rise {
+  --rise-bleed: 16px;
+  /* Duration, curve and delay come inline from intro.ts (introStyle), shared
+     with the hero heading's words. */
+  animation-name: rise;
+  animation-fill-mode: backwards;
+}
+
+/* Mirrored for what hangs from the top of the screen (the header): it drops
+   down from behind a mask along its own top edge instead. */
+@keyframes rise-from-top {
+  from {
+    transform: translateY(calc(-100% - var(--rise-bleed)));
+    clip-path: inset(100% calc(-1 * var(--rise-bleed)) 0 calc(-1 * var(--rise-bleed)));
+  }
+  to {
+    transform: translateY(0);
+    clip-path: inset(calc(-1 * var(--rise-bleed)));
+  }
+}
+
+.rise-from-top {
+  animation-name: rise-from-top;
+}
+
+/* Hairlines draw in left to right (Capabilities); timing comes inline too. */
+@keyframes draw {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.draw {
+  transform-origin: left;
+  animation-name: draw;
+  animation-fill-mode: backwards;
+}
+
+/* A short rise with a fade (the footer's pieces); timing comes inline too. */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.fade-up {
+  animation-name: fade-up;
+  animation-fill-mode: backwards;
+}
+
+/* Blocks (cards, boxes) that slide up from behind their own bottom edge:
+   the .rise move, kept on every entrance profile — on the "blur" one only
+   their texts take the blur. Timing comes inline. */
+.rise-block {
+  --rise-bleed: 16px;
+  animation-name: rise;
+  animation-fill-mode: backwards;
+}
+
+/* Boxes wiped into view from the top edge down (the case page's intro and its
+   first image): the portrait's curtain, kept on every entrance profile like
+   .rise-block — the texts inside take the profile's move. Timing comes inline
+   (the site's entrance curve and duration). */
+.curtain-block {
+  animation-name: curtain-reveal;
+  animation-fill-mode: backwards;
+}
+
+/* The hairline riding a .curtain-block's edge (<Curtain>, Curtain.tsx): a
+   box-sized layer whose bottom border slides from the box's top edge down to
+   its bottom one, on the curtain's own timing, so the box is never cut open. */
+@keyframes curtain-edge {
+  /* Sets off from the box's top hairline (.line-in), right on it — 1px down
+     from the layer's top-edge position — and switches on as it leaves, so it
+     never shows parked there before the curtain moves. */
+  from {
+    transform: translateY(calc(-100% + 1px));
+    opacity: 0;
+  }
+  0.1% {
+    opacity: 1;
+  }
+}
+
+.curtain-edge {
+  animation-name: curtain-edge;
+  animation-fill-mode: backwards;
+}
+
+/* A curtain box's top hairline (<Curtain>, Curtain.tsx): fades in in place,
+   before the curtain opens from it. Delay inline. */
+@keyframes line-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.line-in {
+  animation: line-in calc(var(--dur-hover) * 0.7) var(--ease-fade) backwards;
+}
+
+/* What hangs from a box's top edge (the case's seals) drops down from behind
+   it: the header's move, masked right at that edge (no bleed, so nothing shows
+   above the box), on every entrance profile. Timing comes inline. */
+.drop-block {
+  --rise-bleed: 0px;
+  animation-name: rise-from-top;
+  animation-fill-mode: backwards;
+}
+
+/* Scroll-triggered entrances: a section marked data-reveal="armed" holds its
+   .rise / .rise-block / .draw / SplitText children (or itself) on their first
+   frame until it scrolls into view (JS flips it to "shown"). Never armed
+   without JS, so content still shows. */
+[data-reveal="armed"]:is(.rise, .rise-block, .draw),
+[data-reveal="armed"] :is(.rise, .rise-block, .draw, .drop-block, .split-word, .curtain-block, .curtain-edge, .line-in) {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .rise-block,
+  .curtain-block,
+  .curtain-edge,
+  .line-in,
+  .drop-block,
+  .draw,
+  .fade-up {
+    animation: none;
+  }
+}
+
+/* Entrance profile "blur" (the home, `data-entrance="blur"` on its root):
+   every entrance — hero and quote words, the header, CTAs, cards, section
+   titles, hairlines, list items, the portrait, the footer's pieces — plays
+   React Bits' Blur Text (direction "bottom") instead of its own move: from
+   50px below, blurred and transparent, up into focus. One continuous move on
+   the site's own entrance rhythm (--dur-enter / --ease-enter) — Blur Text's
+   linear half-way step is left out, since on an eased curve it would make the
+   move slow down and pick up again mid-way. Same choreography (every delay is
+   unchanged); everything else (hovers, menu, parallax, the footer's flood) is
+   untouched. */
+@keyframes blur-in {
+  from {
+    filter: blur(10px);
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    filter: none;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-entrance="blur"] :is(.rise, .rise-from-top, .split-word, .draw, .fade-up) {
+  animation-name: blur-in;
+}
+
+/* …except what hangs from the top of the screen (the header): it drops into
+   focus from above instead. */
+@keyframes blur-in-from-top {
+  from {
+    filter: blur(10px);
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    filter: none;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-entrance="blur"] .rise-from-top {
+  animation-name: blur-in-from-top;
+}
+
+/* The profile's names outrank the moves' own reduced-motion `animation: none`,
+   so switch them off again here. */
+@media (prefers-reduced-motion: reduce) {
+  [data-entrance="blur"] :is(.rise, .rise-from-top, .split-word, .draw, .fade-up) {
+    animation: none;
+  }
+}
+
+/* The hero's changing word (BlurWord): the word flows downward through its
+   place — each letter drops into focus from just above, in turn, and leaves
+   the same way, dropping out below, quicker, last letter first. The travel is
+   a fraction of the letter (em), short enough to stay clear of the line below.
+   Letters are their own boxes (so they can move) whether animating or not.
+   Speed and travel are variables, so a quicker use (the menu links' hover,
+   BlurHoverLink) can tune them: --letter-in / --letter-out (durations),
+   --letter-ease (arriving curve), --letter-travel (arriving; leaving travels
+   --letter-travel-out, 40% of it by default), --letter-blur. */
+@keyframes letter-in {
+  from {
+    filter: blur(var(--letter-blur, 10px));
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--letter-travel, 0.2em)));
+  }
+  to {
+    filter: none;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes letter-out {
+  to {
+    filter: blur(var(--letter-blur, 10px));
+    opacity: 0;
+    /* Leaving travels less than arriving (40%): the word just sinks away. */
+    transform: translateY(var(--letter-travel-out, calc(var(--letter-travel, 0.2em) * 0.4)));
+  }
+}
+
+.blur-letter {
+  display: inline-block;
+}
+
+.blur-letter[data-phase="in"] {
+  animation: letter-in var(--letter-in, var(--dur-enter)) var(--letter-ease, var(--ease-enter)) backwards;
+}
+
+/* Leaving accelerates away: the entrance curve, mirrored. */
+.blur-letter[data-phase="out"] {
+  animation: letter-out var(--letter-out, calc(var(--dur-enter) / 2)) cubic-bezier(0.9, 0, 0.75, 0.9) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blur-letter[data-phase] {
+    animation: none;
+  }
+}
+
+/* The open menu (Navbar): links, hairline, contacts and socials blur into
+   focus as one cascade on the page's entrance curve;
+   the delays (one fixed step apart, in reading order) come inline. */
+[data-entrance="blur"] .menu-blur-in {
+  /* A touch quicker than the page's entrances: it answers a click. */
+  animation: blur-in calc(var(--dur-enter) * 0.75) var(--ease-enter) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-entrance="blur"] .menu-blur-in {
+    animation: none;
+  }
+}
+
+/* The Linha's hand-drawn line blurs in too, together with the quote above it:
+   it follows the quote (a sibling), so it's held while the quote waits to
+   scroll in and plays the moment the quote's words start. */
+[data-entrance="blur"] .line-enter {
+  animation: blur-in var(--dur-enter) var(--ease-enter) backwards;
+  animation-delay: 0.1s;
+}
+
+[data-entrance="blur"] [data-scroll-quote][data-reveal="armed"] ~ .line-enter {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-entrance="blur"] .line-enter {
+    animation: none;
+  }
+}
+
+/* The words blur past their box, so their masks open up. */
+[data-entrance="blur"] .split-mask {
+  overflow: visible;
+}
+
+/* The portrait blurs in too, instead of its curtain. */
+[data-entrance="blur"] .curtain-reveal[data-armed] {
+  clip-path: none;
+  opacity: 0;
+}
+
+[data-entrance="blur"] .curtain-reveal[data-armed].is-revealed {
+  animation: blur-in var(--dur-enter) var(--ease-enter) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-entrance="blur"] .curtain-reveal[data-armed] {
+    opacity: 1;
+  }
+}
+
+/* Loading screen — covers the page from first paint, then lifts like a curtain
+   (translateY to -100%) once the count reaches 100%. Its ease-in-out is a
+   deliberate exception: a full-screen panel that starts from rest reads best
+   picking up speed, then slowing off the top. */
+.site-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  transform: translateY(0);
+  transition: transform 1.1s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.site-loader[data-state="lifting"] {
+  transform: translateY(-100%);
+  pointer-events: none;
+}
+
+/* On the home, the curtain trails a gradient off its bottom edge,
+   from the loader's blue to fully transparent, so the lift dissolves into the
+   page instead of ending on a hard line. The tail hangs below the screen until
+   the lift, and the curtain travels its own height plus the tail's to clear. */
+[data-entrance="blur"] .site-loader {
+  --curtain-tail: 70vh;
+}
+
+[data-entrance="blur"] .site-loader::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: var(--curtain-tail);
+  /* Eased stops (not a straight fade), so the blue thins out gradually with no
+     visible band where it starts. */
+  background: linear-gradient(
+    to bottom,
+    rgb(0 31 255 / 1) 0%,
+    rgb(0 31 255 / 0.91) 12%,
+    rgb(0 31 255 / 0.74) 25%,
+    rgb(0 31 255 / 0.54) 38%,
+    rgb(0 31 255 / 0.35) 50%,
+    rgb(0 31 255 / 0.19) 63%,
+    rgb(0 31 255 / 0.08) 75%,
+    rgb(0 31 255 / 0.02) 88%,
+    rgb(0 31 255 / 0) 100%
+  );
+  pointer-events: none;
+}
+
+[data-entrance="blur"] .site-loader[data-state="lifting"] {
+  transform: translateY(calc(-100% - var(--curtain-tail)));
+}
+
+/* While the loader is up, hold the site's entrance animations on their first
+   frame (delays included), so they play as the curtain rises, not beneath it. */
+html:not([data-site-loaded]) body:has(.site-loader[data-state="loading"]) :is(.split-word, .rise, .drop-block) {
+  animation-play-state: paused;
+}
+
+/* Already shown this visit (see SiteLoader): never paint it again. */
+html[data-site-loaded] .site-loader {
+  display: none;
+}
+
+/* While the page-transition curtain covers the screen (PageTransition), hold
+   the entrances where they are — the new page's wait on their first frame and
+   play as the curtain uncovers them. Only the entrance classes, so flipping
+   the flag restyles just those elements, not the whole page. */
+html[data-page-cover]
+  :is(
+    .rise,
+    .rise-block,
+    .rise-from-top,
+    .split-word,
+    .drop-block,
+    .curtain-block,
+    .curtain-edge,
+    .line-in,
+    .draw,
+    .fade-up,
+    .line-enter,
+    .curtain-reveal
+  ) {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-loader {
+    display: none;
+  }
+}
+
+
+
+

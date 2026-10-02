@@ -17,7 +17,7 @@ export async function generateMetadata(props: PageProps<"/cases/[slug]">): Promi
   const { slug } = await props.params;
   const data = getCase(slug);
   if (!data) return {};
-  return { title: `${data.title} — Adriel Colaço`, description: data.summary };
+  return { title: `${data.title} — Adriel Colaço`, description: data.summary.split("\n\n")[0] };
 }
 
 export default async function CasePage(props: PageProps<"/cases/[slug]">) {

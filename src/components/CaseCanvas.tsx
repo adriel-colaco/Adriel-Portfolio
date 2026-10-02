@@ -199,10 +199,37 @@ function FactValue({ fact }: { fact: Case["facts"][number] }) {
   );
 }
 
+/** The intro text: one paragraph per blank-line-separated chunk, a line apart. */
+function Summary({ text }: { text: string }) {
+  return text.split("\n\n").map((paragraph, i) => (
+    <span key={i} className={`block ${i > 0 ? "mt-[1.4em]" : ""}`}>
+      {paragraph}
+    </span>
+  ));
+}
+
 const blockKey = (block: CaseBlock) => ("vimeo" in block ? block.vimeo : block.src);
 // A block's backdrop while its image or video loads: the near-black green the
 // OnProfit work sits on, so a video doesn't flash a blank frame first.
 const BLOCK_BG = "#06120d";
+
+// A row whose image asks for white bands above and below it (CaseImage.padY):
+// the bands' height on each canvas, in its design px. The row grows by both,
+// so the image keeps its proportions.
+const PAD_DESKTOP = 20;
+const PAD_TABLET = 20;
+const PAD_MOBILE = 10;
+const isPadded = (row: Case["rows"][number]) => row.images.some((b) => "padY" in b && !!b.padY);
+
+/** The block's media, inset by the white bands when the row has them. */
+function Inset({ pad, children }: { pad?: string; children: ReactNode }) {
+  if (!pad) return children;
+  return (
+    <div className="absolute inset-x-0" style={{ top: pad, bottom: pad }}>
+      {children}
+    </div>
+  );
+}
 
 /** A block's frame; the page's very first image opens like a curtain, from the
  *  top down (`.curtain-block`, as the intro's boxes), on the site's entrance
@@ -237,8 +264,9 @@ function CaseDesktop({ data }: { data: Case }) {
       >
         <Grid cols={COLS} width={COL_W} unit={u} />
 
-        {/* Intro (Figma 2:94 + 2:81): two 690×410 boxes */}
-        <div className="relative grid" style={{ gridTemplateColumns: `repeat(2, ${u(690)})`, columnGap: u(GAP), height: u(410) }}>
+        {/* Intro (Figma 2:94 + 2:81): two 690×410 boxes (taller when a
+            longer summary needs it) */}
+        <div className="relative grid" style={{ gridTemplateColumns: `repeat(2, ${u(690)})`, columnGap: u(GAP), minHeight: u(410) }}>
           <Curtain at={BOX_AT} lineAt={LINE_AT}>
             <div className="relative flex h-full items-end overflow-clip border border-t-0 border-line bg-canvas">
               {data.seals && <Seals seals={data.seals} unit={u} width={36} textSize={17.6} side="left" inset={20} enter={sealsEnter} />}
@@ -248,9 +276,9 @@ function CaseDesktop({ data }: { data: Case }) {
                 </h1>
                 <p
                   className={`${DROP} font-mono text-muted`}
-                  style={{ fontSize: u(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(introAt(INTRO_DESKTOP, data.facts.length).summary) }}
+                  style={{ fontSize: u(16), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(introAt(INTRO_DESKTOP, data.facts.length).summary) }}
                 >
-                  {data.summary}
+                  <Summary text={data.summary} />
                 </p>
               </div>
             </div>
@@ -279,16 +307,18 @@ function CaseDesktop({ data }: { data: Case }) {
           </Curtain>
         </div>
 
-        {/* Image blocks, row by row */}
-        <div className="relative flex flex-col" style={{ marginTop: u(GAP), gap: u(GAP) }}>
+        {/* Image blocks, row by row, edge to edge (no gaps between them, as on Behance) */}
+        <div className="relative flex flex-col" style={{ marginTop: u(GAP) }}>
           {data.rows.map((row, r) => {
             const n = row.images.length;
-            const cellW = (CONTENT_W - GAP * (n - 1)) / n;
+            const cellW = CONTENT_W / n;
             return (
-              <div key={r} className="flex" style={{ gap: u(GAP), height: u(row.height ?? DEFAULT_ROW_HEIGHT) }}>
+              <div key={r} className="flex" style={{ height: u((row.height ?? DEFAULT_ROW_HEIGHT) + (isPadded(row) ? 2 * PAD_DESKTOP : 0)) }}>
                 {row.images.map((block, i) => (
-                  <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: u(cellW), backgroundColor: BLOCK_BG }}>
-                    <BlockMedia block={block} sizes={`${Math.round((cellW / 1440) * 100)}vw`} eager={r === 0} />
+                  <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: u(cellW), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
+                    <Inset pad={isPadded(row) ? u(PAD_DESKTOP) : undefined}>
+                      <BlockMedia block={block} sizes={`${Math.round((cellW / 1440) * 100)}vw`} eager={r === 0} />
+                    </Inset>
                   </Block>
                 ))}
               </div>
@@ -379,7 +409,7 @@ function CaseTablet({ data }: { data: Case }) {
                 className={`${DROP} font-mono text-muted`}
                 style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(at.summary) }}
               >
-                {data.summary}
+                <Summary text={data.summary} />
               </p>
             </div>
 
@@ -402,21 +432,25 @@ function CaseTablet({ data }: { data: Case }) {
             </dl>
           </Curtain>
 
-          {/* Image blocks, row by row: the desktop's rows scaled to the content width */}
-          {data.rows.map((row, r) => {
-            const n = row.images.length;
-            const cellW = (CONTENT_W_T - GAP * (n - 1)) / n;
-            const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_T) / CONTENT_W;
-            return (
-              <div key={r} className="flex" style={{ gap: ut(GAP), height: ut(height) }}>
-                {row.images.map((block, i) => (
-                  <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: ut(cellW), backgroundColor: BLOCK_BG }}>
-                    <BlockMedia block={block} sizes={`${Math.round((cellW / 820) * 100)}vw`} eager={r === 0} />
-                  </Block>
-                ))}
-              </div>
-            );
-          })}
+          {/* Image blocks, row by row and edge to edge: the desktop's rows scaled to the content width */}
+          <div className="flex flex-col">
+            {data.rows.map((row, r) => {
+              const n = row.images.length;
+              const cellW = CONTENT_W_T / n;
+              const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_T) / CONTENT_W + (isPadded(row) ? 2 * PAD_TABLET : 0);
+              return (
+                <div key={r} className="flex" style={{ height: ut(height) }}>
+                  {row.images.map((block, i) => (
+                    <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: ut(cellW), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
+                      <Inset pad={isPadded(row) ? ut(PAD_TABLET) : undefined}>
+                        <BlockMedia block={block} sizes={`${Math.round((cellW / 820) * 100)}vw`} eager={r === 0} />
+                      </Inset>
+                    </Block>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* More works: the title row across both columns, the cards on the
@@ -493,7 +527,7 @@ function CaseMobile({ data }: { data: Case }) {
                   <ItalicI>{data.title}</ItalicI>
                 </h1>
                 <p className={`${DROP} font-mono text-muted`} style={{ fontSize: um(14), lineHeight: 1.4, ...timing(introAt(INTRO_MOBILE, data.facts.length).summary) }}>
-                  {data.summary}
+                  <Summary text={data.summary} />
                 </p>
               </div>
 
@@ -518,17 +552,21 @@ function CaseMobile({ data }: { data: Case }) {
               </dl>
           </Curtain>
 
-          {/* Image blocks, stacked */}
-          {data.rows.flatMap((row, r) => {
-            const n = row.images.length;
-            const cellW = (CONTENT_W - GAP * (n - 1)) / n;
-            const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_M) / cellW;
-            return row.images.map((block, i) => (
-              <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative w-full overflow-hidden" style={{ height: um(height), backgroundColor: BLOCK_BG }}>
-                <BlockMedia block={block} sizes="95vw" eager={r === 0} />
-              </Block>
-            ));
-          })}
+          {/* Image blocks, stacked edge to edge */}
+          <div className="flex flex-col">
+            {data.rows.flatMap((row, r) => {
+              const n = row.images.length;
+              const cellW = CONTENT_W / n;
+              const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_M) / cellW + (isPadded(row) ? 2 * PAD_MOBILE : 0);
+              return row.images.map((block, i) => (
+                <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative w-full overflow-hidden" style={{ height: um(height), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
+                  <Inset pad={isPadded(row) ? um(PAD_MOBILE) : undefined}>
+                    <BlockMedia block={block} sizes="95vw" eager={r === 0} />
+                  </Inset>
+                </Block>
+              ));
+            })}
+          </div>
         </div>
 
         {/* More works */}

@@ -17,9 +17,9 @@ export type Project = {
 };
 
 // The OnProfit card's seals ("Gr" and "Ai"): the Behance galleries that
-// featured it, as Behance names them (shown on hover; add `date` to show when).
+// featured it, as Behance names them in English (shown on hover; add `date` to show when).
 export const ONPROFIT_SEALS: Seal[] = [
-  { label: "Gr", bg: "#a89160", fg: "#ffffff", feature: "Marca" },
+  { label: "Gr", bg: "#a89160", fg: "#ffffff", feature: "Branding" },
   { label: "Ai", bg: "#2e0502", fg: "#f19f39", feature: "Illustrator" },
 ];
 
@@ -33,12 +33,12 @@ export const PROJECTS: Project[] = [
   },
   { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], objectPosition: "center top" },
   { name: "Heineken", image: "/projects/heineken.jpg", tags: ["UX/UI"] },
-  { name: "TCL SEMP", image: "/projects/tcl.jpg", tags: ["UX/UI"], objectPosition: "center bottom" },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], href: "/cases/tcl-semp" },
   { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], objectPosition: "center bottom" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"] },
-  { name: "Holly Bakehouse", image: "/projects/holly.jpg", tags: ["Illustration"] },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], href: "/cases/holly-bakehouse" },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], objectPosition: "center top" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"] },
+  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], href: "/cases/remapp" },
 ];
 
 // A card's tags: small mono labels on white pills — kept quiet so they read as
@@ -73,7 +73,28 @@ export function tagsBoxStyle(unit: Unit, variant: TagsVariant): CSSProperties {
 const COVER_ASPECT = 1920 / 1726;
 const COVER_ASPECTS: Record<string, number> = {
   "/projects/onprofit.webp": 1948 / 2000,
+  "/projects/tcl-semp-cover-v2.webp": 1920 / 1502,
+  "/projects/holly-bakehouse-cover-v2.webp": 1333 / 2000,
 };
 export const coverAspect = (src: string) => COVER_ASPECTS[src] ?? COVER_ASPECT;
+
+// "See all projects" under the home's cards: hidden for now (there's no
+// projects page yet). The layouts keep its spot; flip this to bring it back.
+export const SHOW_SEE_ALL = false;
+
+// Projects left off the home's cards for now (their cases aren't ready). The
+// canvases close the gap: whatever follows the cards moves up to the last row
+// still shown. Empty it to show them again.
+export const HIDDEN_PROJECTS: string[] = ["Trivium", "FTD Educação"];
+export const isShown = (card: { name: string }) => !HIDDEN_PROJECTS.includes(card.name);
+
+// Projects shown on the home as work in progress: the cover blurred, a single
+// blue "Work in Progress" tag in place of their own, and no link or hover (nor
+// the project cursor's badge) until their cases are in.
+export const WIP_PROJECTS: string[] = ["Farol Santander", "Hungara Lanches"];
+export const isWip = (card: { name: string }) => WIP_PROJECTS.includes(card.name);
+export const WIP_LABEL = "Work in Progress";
+// The "Work in Progress" pill, a size up from the cards' tags (label and padding).
+export const WIP_TAG_SCALE = 1.25;
 
 export const projectByName = (name: string) => PROJECTS.find((p) => p.name === name);

@@ -6,6 +6,9 @@ import { subscribe, prefersReducedMotion, LERP } from "./parallaxTicker";
 import { coverAspect } from "./projects";
 
 const SCALE = 1.18; // zoom that creates the drift head-room (9% each side)
+// The covers' optimised quality (allowed in next.config.ts): Next's default 75
+// left them visibly soft.
+const COVER_QUALITY = 90;
 
 /** The frame the image fills, in design px on a canvas `canvas` px wide. */
 export type ImageFrame = { width: number; height: number; canvas: number };
@@ -28,6 +31,8 @@ type ParallaxImageProps = {
   objectPosition?: string;
   /** Max vertical travel as a fraction of the frame height (must stay < 9%). */
   travel?: number;
+  /** Blurs the cover (a CSS length) and drops its hover zoom: a work-in-progress card. */
+  blur?: string;
 };
 
 /**
@@ -45,6 +50,7 @@ export default function ParallaxImage({
   frame,
   objectPosition = "center",
   travel = 0.08,
+  blur,
 }: ParallaxImageProps) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -83,8 +89,9 @@ export default function ParallaxImage({
         alt={alt}
         fill
         sizes={coverSizes(src, frame)}
-        className="object-cover transition-transform duration-(--dur-ui) ease-(--ease-ui) group-hover:scale-[1.06]"
-        style={{ objectPosition }}
+        quality={COVER_QUALITY}
+        className={blur ? "object-cover" : "object-cover transition-transform duration-(--dur-ui) ease-(--ease-ui) group-hover:scale-[1.06]"}
+        style={{ objectPosition, filter: blur ? `blur(${blur})` : undefined }}
       />
     </div>
   );

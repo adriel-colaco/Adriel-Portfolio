@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Seals, { type Seal } from "./Seals";
-import { ONPROFIT_SEALS, tagStyle, tagsBoxStyle } from "./projects";
+import { ONPROFIT_SEALS, SHOW_SEE_ALL, WIP_LABEL, WIP_TAG_SCALE, isShown, isWip, tagStyle, tagsBoxStyle } from "./projects";
 import ItalicI from "./ItalicI";
 import ParallaxImage from "./ParallaxImage";
 import ParallaxCard from "./ParallaxCard";
@@ -70,16 +70,22 @@ type Card = {
 
 // Each row pairs a large card with a small one aligned to its top; the small
 // one drifts further down as the row scrolls through (see ParallaxCard).
-const CARDS: Card[] = [
-  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], left: COL.c3, top: 709, width: 690, imageHeight: 620, objectPosition: "center top", speed: 0.04 },
+const ALL_CARDS: Card[] = [
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], left: COL.c3, top: 709, width: 690, imageHeight: 620, speed: 0.04, href: "/cases/tcl-semp" },
   { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], left: COL.c2, top: 709, width: 335, imageHeight: 448, speed: 0.14, href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "TCL SEMP", image: "/projects/tcl.jpg", tags: ["UX/UI"], left: COL.c1, top: 1577, width: 690, imageHeight: 620, objectPosition: "center bottom", speed: 0.035 },
-  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: COL.c4, top: 1577, width: 335, imageHeight: 448, objectPosition: "center bottom", speed: 0.13 },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: COL.c1, top: 1577, width: 690, imageHeight: 620, speed: 0.035, href: "/cases/holly-bakehouse" },
+  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: COL.c4, top: 1577, width: 335, imageHeight: 448, speed: 0.13, href: "/cases/remapp" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], left: COL.c3, top: 2445, width: 690, imageHeight: 620, speed: 0.045 },
-  { name: "Holly Bakehouse", image: "/projects/holly.jpg", tags: ["Illustration"], left: COL.c1, top: 2445, width: 335, imageHeight: 448, speed: 0.14 },
+  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: COL.c1, top: 2445, width: 335, imageHeight: 448, objectPosition: "center bottom", speed: 0.14 },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], left: COL.c1, top: 3313, width: 690, imageHeight: 620, objectPosition: "center top", speed: 0.04 },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: COL.c3, top: 3313, width: 335, imageHeight: 448, speed: 0.13 },
+  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], left: COL.c3, top: 3313, width: 335, imageHeight: 448, objectPosition: "center top", speed: 0.13 },
 ];
+
+const CARDS = ALL_CARDS.filter(isShown);
+// With rows hidden (HIDDEN_PROJECTS), everything under the cards — Capabilities
+// and the canvas's end — moves up by the hidden rows' height.
+const LAST_ROW = Math.max(...ALL_CARDS.map((card) => card.top));
+const LIFT = LAST_ROW - Math.max(...CARDS.map((card) => card.top));
 
 // Only the first row is on screen at load, so only it takes part in the hero
 // entrance — left to right, like the rest of the cascade.
@@ -103,11 +109,12 @@ const COLUMN_WIDTH = 335;
 const LAST_LARGE_CARD = CARDS.reduce((last, card) => (card.width > COLUMN_WIDTH && card.top >= last.top ? card : last));
 const SEE_ALL = { left: COL.c4 + 20, width: 295, height: 56 };
 
-function Tag({ label }: { label: string }) {
+/** A tag pill; `wip` is the blue "Work in Progress" one. */
+function Tag({ label, wip = false }: { label: string; wip?: boolean }) {
   return (
     <span
-      className="flex items-center justify-center rounded-full bg-white font-mono leading-none text-ink"
-      style={tagStyle(u, "desktop")}
+      className={`flex items-center justify-center rounded-full font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
+      style={tagStyle(wip ? (px) => u(px * WIP_TAG_SCALE) : u, "desktop")}
     >
       {label}
     </span>
@@ -136,7 +143,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
         style={introStep >= 0 ? introStyle("cards", introStep) : undefined}
       >
         <CardLink href={card.href}>
-          <div className="group relative w-full overflow-hidden" data-project-card style={{ height: u(card.imageHeight) }}>
+          <div className="group relative w-full overflow-hidden" data-project-card={isWip(card) ? undefined : ""} style={{ height: u(card.imageHeight) }}>
             {/* Taller (large) frames drift less so the image parallax feels
                 consistent across card sizes instead of stronger on the big ones. */}
             <ParallaxImage
@@ -145,6 +152,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
               frame={{ width: card.width, height: card.imageHeight, canvas: FRAME }}
               objectPosition={card.objectPosition ?? "center"}
               travel={card.imageHeight >= 600 ? 0.05 : 0.08}
+              blur={isWip(card) ? u(16) : undefined}
             />
             {/* A first-row card's seals drop in once the card is well on its way. */}
             {card.seals && (
@@ -162,9 +170,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
               className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-start"
               style={tagsBoxStyle(u, "desktop")}
             >
-              {card.tags.map((tag) => (
-                <Tag key={tag} label={tag} />
-              ))}
+              {isWip(card) ? <Tag label={WIP_LABEL} wip /> : card.tags.map((tag) => <Tag key={tag} label={tag} />)}
             </div>
           </div>
           <p
@@ -185,7 +191,7 @@ export default function DesktopCanvas() {
   return (
     <div className="hidden w-full landscape-tablet:block portrait-tablet:hidden" style={{ containerType: "inline-size" }}>
       <ProjectCursor />
-      <div className="relative w-full" style={{ height: `calc(${ANCHOR} + ${u(CANVAS_BOTTOM - FIRST_ROW)})` }}>
+      <div className="relative w-full" style={{ height: `calc(${ANCHOR} + ${u(CANVAS_BOTTOM - LIFT - FIRST_ROW)})` }}>
         {/* Background grid: the 4 columns themselves, stroked full-height */}
         {Object.values(COL).map((left) => (
           <span
@@ -227,6 +233,7 @@ export default function DesktopCanvas() {
         {/* "Recent work ↘" in the empty first column, level with the first card
             row (Figma 24:408 / 24:409). */}
         <div
+          data-anchor="work"
           className="rise absolute flex items-start justify-between text-muted"
           style={{ left: u(40), top: y(FIRST_ROW), width: u(295), ...introStyle("recentWork") }}
         >
@@ -251,7 +258,7 @@ export default function DesktopCanvas() {
         {/* Project cards; "See all projects" hangs off the last row's large card */}
         {CARDS.map((card) => (
           <ProjectCard key={card.name} card={card}>
-            {card === LAST_LARGE_CARD && (
+            {SHOW_SEE_ALL && card === LAST_LARGE_CARD && (
               <div
                 className="absolute"
                 style={{
@@ -267,7 +274,7 @@ export default function DesktopCanvas() {
           </ProjectCard>
         ))}
 
-        <Capabilities style={{ top: y(4181) }} />
+        <Capabilities style={{ top: y(4181 - LIFT) }} />
       </div>
 
       {/* The Linha section flows below the canvas (the footer reveal chains off

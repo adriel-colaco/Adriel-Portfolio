@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useRef } from "react";
 import Link from "next/link";
 import Seals, { type Seal } from "./Seals";
-import { ONPROFIT_SEALS, tagStyle, tagsBoxStyle } from "./projects";
+import { ONPROFIT_SEALS, SHOW_SEE_ALL, WIP_LABEL, WIP_TAG_SCALE, isShown, isWip, tagStyle, tagsBoxStyle } from "./projects";
 import ItalicI from "./ItalicI";
 import ParallaxImage from "./ParallaxImage";
 import ProjectCursor from "./ProjectCursor";
@@ -78,16 +78,20 @@ const NAME_GAP = 12;
 const NAME_SIZE = 32;
 const ROW_PITCH = IMAGE_H + NAME_GAP + NAME_SIZE + 80;
 const row = (r: number) => r * ROW_PITCH;
-const CARDS: Card[] = [
+const ALL_CARDS: Card[] = [
   { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], left: COL.c1, top: row(0), href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], left: COL.c2, top: row(0), objectPosition: "center top" },
-  { name: "TCL SEMP", image: "/projects/tcl.jpg", tags: ["UX/UI"], left: COL.c1, top: row(1), objectPosition: "center bottom" },
-  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: COL.c2, top: row(1), objectPosition: "center bottom" },
-  { name: "Holly Bakehouse", image: "/projects/holly.jpg", tags: ["Illustration"], left: COL.c1, top: row(2) },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], left: COL.c2, top: row(0), href: "/cases/tcl-semp" },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: COL.c1, top: row(1), href: "/cases/holly-bakehouse" },
+  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: COL.c2, top: row(1), href: "/cases/remapp" },
+  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: COL.c1, top: row(2), objectPosition: "center bottom" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], left: COL.c2, top: row(2) },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], left: COL.c1, top: row(3), objectPosition: "center top" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: COL.c2, top: row(3) },
+  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], left: COL.c2, top: row(3), objectPosition: "center top" },
 ];
+
+// Projects hidden for now (HIDDEN_PROJECTS) are left out; the grid ends at the last row still shown.
+const CARDS = ALL_CARDS.filter(isShown);
+const LAST_ROW_TOP = Math.max(...CARDS.map((card) => card.top));
 
 // Only the first row is on screen at load, so only it joins the hero entrance.
 const SEALS_LAG = 0.4;
@@ -95,14 +99,15 @@ const FIRST_ROW_CARDS = CARDS.filter((card) => card.top === 0);
 
 // "See all projects" under the grid, in the right-hand column (inset like the
 // desktop's), 60px below the last row.
-const SEE_ALL = { top: row(3) + IMAGE_H + NAME_GAP + NAME_SIZE + 60, width: COL_W - 40, height: 56 };
-const CARDS_END = SEE_ALL.top + SEE_ALL.height;
+const SEE_ALL = { top: LAST_ROW_TOP + IMAGE_H + NAME_GAP + NAME_SIZE + 60, width: COL_W - 40, height: 56 };
+const CARDS_END = SHOW_SEE_ALL ? SEE_ALL.top + SEE_ALL.height : LAST_ROW_TOP + IMAGE_H + NAME_GAP + NAME_SIZE;
 
-function Tag({ label }: { label: string }) {
+/** A tag pill; `wip` is the blue "Work in Progress" one. */
+function Tag({ label, wip = false }: { label: string; wip?: boolean }) {
   return (
     <span
-      className="flex items-center justify-center rounded-full bg-white font-mono leading-none text-ink"
-      style={tagStyle(u, "desktop")}
+      className={`flex items-center justify-center rounded-full font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
+      style={tagStyle(wip ? (px) => u(px * WIP_TAG_SCALE) : u, "desktop")}
     >
       {label}
     </span>
@@ -128,13 +133,18 @@ function ProjectCard({ card }: { card: Card }) {
         style={introStep >= 0 ? introStyle("cards", introStep) : undefined}
       >
         <CardLink href={card.href}>
-          <div className="group relative w-full overflow-hidden" data-project-card style={{ height: u(IMAGE_H) }}>
+          <div
+            className="group relative w-full overflow-hidden"
+            data-project-card={isWip(card) ? undefined : ""}
+            style={{ height: u(IMAGE_H) }}
+          >
             <ParallaxImage
               src={card.image}
               alt={card.name}
               frame={{ width: COL_W, height: IMAGE_H, canvas: FRAME }}
               objectPosition={card.objectPosition ?? "center"}
               travel={0.06}
+              blur={isWip(card) ? u(12) : undefined}
             />
             {card.seals && (
               <Seals
@@ -145,10 +155,11 @@ function ProjectCard({ card }: { card: Card }) {
                 enter={introStep >= 0 ? { at: introDelay("cards", introStep) + SEALS_LAG } : undefined}
               />
             )}
-            <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-start" style={tagsBoxStyle(u, "desktop")}>
-              {card.tags.map((tag) => (
-                <Tag key={tag} label={tag} />
-              ))}
+            <div
+              className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-start"
+              style={tagsBoxStyle(u, "desktop")}
+            >
+              {isWip(card) ? <Tag label={WIP_LABEL} wip /> : card.tags.map((tag) => <Tag key={tag} label={tag} />)}
             </div>
           </div>
           <p
@@ -177,7 +188,11 @@ function TitleRow({ children, icon, delay }: { children: ReactNode; icon?: boole
         {children}
         {icon && <ArrowIcon glyph="down" style={{ width: u(24), height: u(24) }} />}
       </div>
-      <div aria-hidden className="draw bg-line" style={{ marginTop: u(HAIRLINE_GAP), height: 1, ...timing(delay + LINE_AT) }} />
+      <div
+        aria-hidden
+        className="draw bg-line"
+        style={{ marginTop: u(HAIRLINE_GAP), height: 1, ...timing(delay + LINE_AT) }}
+      />
     </>
   );
 }
@@ -235,7 +250,14 @@ function CapabilitiesTablet({ style }: { style?: CSSProperties }) {
           </TitleRow>
           <p
             className="rise font-mono text-muted"
-            style={{ marginTop: u(20), paddingInline: u(20), fontSize: u(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(ITEMS_AT) }}
+            style={{
+              marginTop: u(20),
+              paddingInline: u(20),
+              fontSize: u(18),
+              lineHeight: 1.4,
+              letterSpacing: "-0.03em",
+              ...timing(ITEMS_AT),
+            }}
           >
             {CAPABILITIES_INTRO}
           </p>
@@ -331,7 +353,7 @@ export default function TabletCanvas() {
 
         {/* "Recent work ↓" across both columns, its hairline under it, just
             above the first row. */}
-        <div className="absolute" style={{ left: u(COL.c1), width: u(CONTENT_W), top: y(-TITLE_BLOCK) }}>
+        <div data-anchor="work" className="absolute" style={{ left: u(COL.c1), width: u(CONTENT_W), top: y(-TITLE_BLOCK) }}>
           <div
             className="rise flex items-center justify-between text-muted"
             style={{ height: u(ROW), paddingInline: u(20), ...introStyle("recentWork") }}
@@ -348,12 +370,14 @@ export default function TabletCanvas() {
           <ProjectCard key={card.name} card={card} />
         ))}
 
-        <div
-          className="absolute"
-          style={{ left: u(COL.c2 + 20), top: y(SEE_ALL.top), width: u(SEE_ALL.width), height: u(SEE_ALL.height) }}
-        >
-          <HeroCTA label="See all projects" icon="plus" fontSize={u(28)} iconSize={u(24)} paddingLeft={u(24)} paddingRight={u(20)} />
-        </div>
+        {SHOW_SEE_ALL && (
+          <div
+            className="absolute"
+            style={{ left: u(COL.c2 + 20), top: y(SEE_ALL.top), width: u(SEE_ALL.width), height: u(SEE_ALL.height) }}
+          >
+            <HeroCTA label="See all projects" icon="plus" fontSize={u(28)} iconSize={u(24)} paddingLeft={u(24)} paddingRight={u(20)} />
+          </div>
+        )}
 
         <CapabilitiesTablet style={{ marginTop: u(160) }} />
       </div>

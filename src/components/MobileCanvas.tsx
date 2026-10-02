@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import ItalicI from "./ItalicI";
 import Seals, { type Seal } from "./Seals";
-import { ONPROFIT_SEALS, tagStyle, tagsBoxStyle } from "./projects";
+import { ONPROFIT_SEALS, SHOW_SEE_ALL, WIP_LABEL, WIP_TAG_SCALE, isShown, isWip, tagStyle, tagsBoxStyle } from "./projects";
 import ParallaxImage from "./ParallaxImage";
 import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
@@ -46,7 +46,6 @@ const y = (px: number) => {
 // Capabilities (which flows from there).
 const SEE_ALL_TOP = 4216;
 const SEE_ALL_HEIGHT = 52;
-const CARDS_END = SEE_ALL_TOP + SEE_ALL_HEIGHT + 100;
 
 // Heading size: its widest line ("agencies worldwide", 6.75em) just fills the
 // 320px content width, so the heading spans the container.
@@ -71,22 +70,29 @@ type MCard = {
 
 // Same eight projects as desktop, in the Figma mobile order: full-width "large"
 // cards alternating with smaller cards nudged left/right.
-const CARDS: MCard[] = [
-  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], x: 10, y: 732, w: 340, imageHeight: 328, objectPosition: "center" },
+const ALL_CARDS: MCard[] = [
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], x: 10, y: 732, w: 340, imageHeight: 328, objectPosition: "center", href: "/cases/tcl-semp" },
   { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], x: 97.5, y: 1204, w: 252.5, imageHeight: 270, objectPosition: "center", href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "TCL SEMP", image: "/projects/tcl.jpg", tags: ["UX/UI"], x: 10, y: 1618, w: 340, imageHeight: 328, objectPosition: "center bottom" },
-  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], x: 10, y: 2090, w: 252.5, imageHeight: 270, objectPosition: "center bottom" },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], x: 10, y: 1618, w: 340, imageHeight: 328, objectPosition: "center", href: "/cases/holly-bakehouse" },
+  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], x: 10, y: 2090, w: 252.5, imageHeight: 270, objectPosition: "center", href: "/cases/remapp" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], x: 10, y: 2504, w: 340, imageHeight: 328, objectPosition: "center" },
-  { name: "Holly Bakehouse", image: "/projects/holly.jpg", tags: ["Illustration"], x: 97.5, y: 2976, w: 252.5, imageHeight: 270, objectPosition: "center" },
+  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], x: 97.5, y: 2976, w: 252.5, imageHeight: 270, objectPosition: "center bottom" },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], x: 10, y: 3390, w: 340, imageHeight: 328, objectPosition: "center top" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], x: 10, y: 3862, w: 252.5, imageHeight: 270, objectPosition: "center" },
+  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], x: 10, y: 3862, w: 252.5, imageHeight: 270, objectPosition: "center" },
 ];
 
-function Tag({ label }: { label: string }) {
+// Projects hidden for now (HIDDEN_PROJECTS) are left out, and Capabilities
+// follows the last card still shown by the same 100px.
+const CARDS = ALL_CARDS.filter(isShown);
+const LAST_CARD_END = Math.max(...CARDS.map((card) => card.y + card.imageHeight)) + 12 + 32;
+const CARDS_END = (SHOW_SEE_ALL ? SEE_ALL_TOP + SEE_ALL_HEIGHT : LAST_CARD_END) + 100;
+
+/** A tag pill; `wip` is the blue "Work in Progress" one. */
+function Tag({ label, wip = false }: { label: string; wip?: boolean }) {
   return (
     <span
-      className="flex items-center justify-center rounded-full bg-white font-mono leading-none text-ink"
-      style={tagStyle(u, "mobile")}
+      className={`flex items-center justify-center rounded-full font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
+      style={tagStyle(wip ? (px) => u(px * WIP_TAG_SCALE) : u, "mobile")}
     >
       {label}
     </span>
@@ -129,6 +135,7 @@ function ProjectCard({ card, entrance }: { card: MCard; entrance: boolean }) {
             frame={{ width: card.w, height: card.imageHeight, canvas: FRAME }}
             objectPosition={card.objectPosition ?? "center"}
             travel={card.imageHeight >= 300 ? 0.06 : 0.08}
+            blur={isWip(card) ? u(10) : undefined}
           />
           {/* The seals drop in as the card scrolls into view (the frame-sized
               Reveal is what's observed; the ribbons move inside it). */}
@@ -143,9 +150,7 @@ function ProjectCard({ card, entrance }: { card: MCard; entrance: boolean }) {
             className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap items-start"
             style={tagsBoxStyle(u, "mobile")}
           >
-            {card.tags.map((tag) => (
-              <Tag key={tag} label={tag} />
-            ))}
+            {isWip(card) ? <Tag label={WIP_LABEL} wip /> : card.tags.map((tag) => <Tag key={tag} label={tag} />)}
           </div>
         </div>
         <p className="font-serif leading-none text-ink" style={{ fontSize: u(32) }}>
@@ -200,6 +205,7 @@ export default function MobileCanvas() {
 
         {/* "Recent work ↓" just above the first card (no free column on mobile) */}
         <div
+          data-anchor="work"
           className="rise absolute flex items-center justify-between text-muted"
           style={{ left: u(20), top: y(RECENT_WORK), width: u(320), ...introStyle("recentWork") }}
         >
@@ -219,12 +225,14 @@ export default function MobileCanvas() {
         ))}
 
         {/* "See all projects", full content width under the last card */}
-        <div
-          className="absolute"
-          style={{ left: u(20), top: y(SEE_ALL_TOP), width: u(320), height: u(SEE_ALL_HEIGHT) }}
-        >
-          <HeroCTA label="See all projects" icon="plus" fontSize={u(24)} iconSize={u(22)} paddingLeft={u(22)} paddingRight={u(18)} />
-        </div>
+        {SHOW_SEE_ALL && (
+          <div
+            className="absolute"
+            style={{ left: u(20), top: y(SEE_ALL_TOP), width: u(320), height: u(SEE_ALL_HEIGHT) }}
+          >
+            <HeroCTA label="See all projects" icon="plus" fontSize={u(24)} iconSize={u(22)} paddingLeft={u(22)} paddingRight={u(18)} />
+          </div>
+        )}
 
         <CapabilitiesMobile />
       </div>

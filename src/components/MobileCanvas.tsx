@@ -6,6 +6,7 @@ import { ONPROFIT_SEALS, SHOW_SEE_ALL, WIP_LABEL, WIP_TAG_SCALE, isShown, isWip,
 import ParallaxImage from "./ParallaxImage";
 import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
+import { WHATSAPP_URL } from "./contact";
 import ArrowIcon from "./ArrowIcon";
 import CapabilitiesMobile from "./CapabilitiesMobile";
 import LinhaSectionMobile from "./LinhaSectionMobile";
@@ -199,7 +200,7 @@ export default function MobileCanvas() {
             className="rise shrink-0"
             style={{ marginTop: u(24), width: u(320), height: u(52), ...introStyle("cta") }}
           >
-            <HeroCTA label="Get in touch" fontSize={u(24)} iconSize={u(22)} paddingLeft={u(22)} paddingRight={u(18)} />
+            <HeroCTA label="Get in touch" href={WHATSAPP_URL} fontSize={u(24)} iconSize={u(22)} paddingLeft={u(22)} paddingRight={u(18)} />
           </div>
         </div>
 

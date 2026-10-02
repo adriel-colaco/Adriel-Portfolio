@@ -10,6 +10,7 @@ import ParallaxImage from "./ParallaxImage";
 import ProjectCursor from "./ProjectCursor";
 import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
+import { WHATSAPP_URL } from "./contact";
 import ArrowIcon from "./ArrowIcon";
 import ScrollQuote from "./ScrollQuote";
 import ScrollLine, { DESKTOP_LINE } from "./ScrollLine";
@@ -347,7 +348,7 @@ export default function TabletCanvas() {
             className="rise shrink-0"
             style={{ marginTop: u(40), width: u(SEE_ALL.width), height: u(56), ...introStyle("cta") }}
           >
-            <HeroCTA label="Get in touch" fontSize={u(28)} iconSize={u(24)} paddingLeft={u(24)} paddingRight={u(20)} />
+            <HeroCTA label="Get in touch" href={WHATSAPP_URL} fontSize={u(28)} iconSize={u(24)} paddingLeft={u(24)} paddingRight={u(20)} />
           </div>
         </div>
 

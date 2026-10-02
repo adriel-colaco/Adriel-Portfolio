@@ -4,6 +4,7 @@ import { useRef } from "react";
 import ArrowIcon from "./ArrowIcon";
 import type { ComponentProps } from "react";
 import { useMagnetPull } from "./useMagnetPull";
+import { externalProps } from "./contact";
 
 /**
  * The site's white CTA pill — "Get in touch" in the hero (Figma node 20:1137),
@@ -42,6 +43,7 @@ export default function HeroCTA({
     <a
       ref={ref}
       href={href}
+      {...externalProps(href)}
       data-cursor-magnet
       className="hero-cta flex h-full w-full items-center rounded-full font-serif"
       style={{ paddingLeft, paddingRight }}

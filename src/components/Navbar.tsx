@@ -11,6 +11,7 @@ import { introStyle } from "./intro";
 import SocialIcons from "./SocialIcons";
 import BlurHoverLink from "./BlurHoverLink";
 import { useEntrance } from "./Entrance";
+import { EMAIL, EMAIL_URL, WHATSAPP_URL } from "./contact";
 
 // "Work" and "Contact" scroll the home to a section (scrollToSection): from
 // another page they go to the home with the section's hash, and the home
@@ -49,8 +50,8 @@ function scrollToSection(section: Section, behavior: ScrollBehavior = "smooth") 
 
 // Contact details shown at the foot of the open menu (Figma 37:34).
 const CONTACTS = [
-  { label: "Whatsapp", value: "(51) 41 9 9952-3617", href: "https://wa.me/5541999523617" },
-  { label: "E-mail", value: "adriel.colaco2@gmail.com", href: "mailto:adriel.colaco2@gmail.com" },
+  { label: "Whatsapp", value: "(51) 41 9 9952-3617", href: WHATSAPP_URL },
+  { label: "E-mail", value: EMAIL, href: EMAIL_URL },
 ];
 
 // The hamburger ↔ X morph runs in two beats on the interface's rhythm: the

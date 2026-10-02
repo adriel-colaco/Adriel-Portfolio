@@ -10,6 +10,7 @@ import { INTRO_DURATION, INTRO_EASE } from "./intro";
 import { useMagnetPull } from "./useMagnetPull";
 import { useEntrance } from "./Entrance";
 import SocialIcons from "./SocialIcons";
+import { EMAIL_URL, WHATSAPP_URL, externalProps } from "./contact";
 
 // A short hold (in viewport heights) after the line's draw target completes,
 // before the circle starts, so the line's own eased draw visibly settles at its
@@ -263,6 +264,9 @@ export default function FooterReveal() {
 // the page canvas, so it reads cleanly on the blue.
 const FG = "#e0e0e0";
 
+// The credit after ©2026 on the footer's bottom row.
+const CREDIT = "Designed in Figma | Vibe coded with Claude";
+
 /**
  * The footer contents, reproducing the Figma frame (node 75:2, 1440×768):
  * "Let's talk?" and the two contact pills, a full-width divider, then the ©2026
@@ -357,10 +361,10 @@ function FooterContent() {
           className="flex items-center"
           style={{ width: u(670), height: u(145), gap: u(20) }}
         >
-          <ContactPill href="#" label="E-mail" enter={enter(0.32)}>
+          <ContactPill href={EMAIL_URL} label="E-mail" enter={enter(0.32)}>
             <EmailIcon style={{ width: u(38.005), height: u(38.005) }} />
           </ContactPill>
-          <ContactPill href="#" label="WhatsApp" enter={enter(0.42)}>
+          <ContactPill href={WHATSAPP_URL} label="WhatsApp" enter={enter(0.42)}>
             <WhatsAppIcon style={{ width: u(33.933), height: u(33.933) }} />
           </ContactPill>
         </div>
@@ -373,12 +377,12 @@ function FooterContent() {
         style={{ top: u(668), height: "1px", backgroundColor: FG, ...divider.style }}
       />
 
-      {/* ©2026 */}
+      {/* ©2026 | credit */}
       <p
         className="absolute font-mono whitespace-nowrap"
         style={{ left: u(40), top: u(705), fontSize: u(18), lineHeight: 1.4, color: FG }}
       >
-        {inView && <SplitText text="©2026" stagger={0.07} startDelay={0.7} />}
+        {inView && <SplitText text={`©2026 | ${CREDIT}`} stagger={0.03} startDelay={0.7} />}
       </p>
 
       {/* Social row (Frame 427319153) */}
@@ -455,10 +459,10 @@ function MobileFooterContent() {
           </h2>
 
           <div className={`flex flex-col ${pills.className}`} style={{ gap: um(12), ...pills.style }}>
-            <MobilePill href="#" label="WhatsApp">
+            <MobilePill href={WHATSAPP_URL} label="WhatsApp">
               <WhatsAppIcon style={{ width: um(21.4), height: um(21.4) }} />
             </MobilePill>
-            <MobilePill href="#" label="E-mail">
+            <MobilePill href={EMAIL_URL} label="E-mail">
               <EmailIcon style={{ width: um(24), height: um(24) }} />
             </MobilePill>
           </div>
@@ -483,6 +487,13 @@ function MobileFooterContent() {
               <FooterSocials scale={iconScale(FRAME_M, 15.2)} />
             </div>
           </div>
+          {/* No room beside the icons on a phone, so the credit runs under the row. */}
+          <p
+            className={`font-mono whitespace-nowrap ${bottomRow.className}`}
+            style={{ marginTop: um(-6), fontSize: um(12), lineHeight: 1.4, color: FG, ...bottomRow.style }}
+          >
+            {CREDIT}
+          </p>
         </div>
       </div>
     </div>
@@ -551,10 +562,10 @@ function TabletFooterContent() {
             {inView && <SplitText text="Let's talk?" stagger={0.09} startDelay={0.05} />}
           </h2>
           <div className="flex" style={{ height: ut(156), gap: ut(20) }}>
-            <TabletPill href="#" label="E-mail" enter={enter(0.32)}>
+            <TabletPill href={EMAIL_URL} label="E-mail" enter={enter(0.32)}>
               <EmailIcon style={{ width: ut(40.8), height: ut(40.8) }} />
             </TabletPill>
-            <TabletPill href="#" label="WhatsApp" enter={enter(0.42)}>
+            <TabletPill href={WHATSAPP_URL} label="WhatsApp" enter={enter(0.42)}>
               <WhatsAppIcon style={{ width: ut(36.4), height: ut(36.4) }} />
             </TabletPill>
           </div>
@@ -569,7 +580,7 @@ function TabletFooterContent() {
           />
           <div className="flex items-center justify-between">
             <p className="font-mono whitespace-nowrap" style={{ fontSize: ut(18), lineHeight: 1.4, color: FG }}>
-              {inView && <SplitText text="©2026" stagger={0.07} startDelay={0.7} />}
+              {inView && <SplitText text={`©2026 | ${CREDIT}`} stagger={0.03} startDelay={0.7} />}
             </p>
             <div className={bottomRow.className} style={bottomRow.style}>
               <FooterSocials scale={iconScale(FRAME_T, 20)} />
@@ -601,6 +612,7 @@ function TabletPill({
     <a
       ref={ref}
       href={href}
+      {...externalProps(href)}
       data-cursor-magnet
       className={`footer-pill flex h-full flex-1 items-center justify-center rounded-full border font-serif will-change-transform ${enter.className}`}
       style={enter.style}
@@ -642,6 +654,7 @@ function MobilePill({
   return (
     <a
       href={href}
+      {...externalProps(href)}
       className="footer-pill flex items-center justify-center rounded-full border font-serif"
       style={{ height: um(92), gap: um(12) }}
     >
@@ -675,6 +688,7 @@ function ContactPill({
     <a
       ref={ref}
       href={href}
+      {...externalProps(href)}
       data-cursor-magnet
       // The whole pill (border + icon + label) enters on reveal; its hover
       // colour fade comes from `.footer-pill`.

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import ArrowIcon from "./ArrowIcon";
 import HeroCTA from "./HeroCTA";
@@ -7,7 +8,7 @@ import ParallaxImage from "./ParallaxImage";
 import ProjectCursor from "./ProjectCursor";
 import Reveal from "./Reveal";
 import Seals from "./Seals";
-import type { Case, CaseBlock } from "./cases";
+import { CASES, type Case, type CaseBlock } from "./cases";
 import { Curtain, CURTAIN_DROP, CURTAIN_LEAD, curtainPieceAt, curtainReach } from "./Curtain";
 import { INTRO_DURATION, INTRO_EASE } from "./intro";
 import { projectByName, tagStyle, tagsBoxStyle, type Project, type TagsVariant } from "./projects";
@@ -110,7 +111,7 @@ function Tag({ label, unit, variant }: { label: string; unit: (px: number) => st
   );
 }
 
-/** A "More works" card: image with its tags, name below; the image drifts and zooms like the home's. */
+/** A "More works" card, linking to its case: image with its tags, name below; the image drifts and zooms like the home's. */
 function WorkCard({
   project,
   unit,
@@ -129,7 +130,7 @@ function WorkCard({
   frame: { width: number; canvas: number };
 }) {
   return (
-    <div className="flex flex-col" style={{ gap: unit(12) }}>
+    <Link href={project.href ?? "/"} className="flex flex-col" style={{ gap: unit(12) }}>
       <div className="group relative w-full overflow-hidden" data-project-card style={{ height: unit(imageHeight) }}>
         <ParallaxImage src={project.image} alt={project.name} frame={{ ...frame, height: imageHeight }} objectPosition={project.objectPosition} />
         {project.seals && <Seals seals={project.seals} unit={unit} width={variant === "desktop" ? 28 : 24} textSize={variant === "desktop" ? 13.7 : 11.4} />}
@@ -145,7 +146,7 @@ function WorkCard({
       <p className="font-serif leading-none text-ink" style={{ paddingInline: unit(12), fontSize: unit(titleSize) }}>
         <ItalicI>{project.name}</ItalicI>
       </p>
-    </div>
+    </Link>
   );
 }
 
@@ -242,7 +243,13 @@ function Block({ first, className, style, children }: { first: boolean; classNam
   );
 }
 
-const moreWorksOf = (c: Case) => c.moreWorks.map(projectByName).filter((p): p is Project => !!p);
+// "More works": the other cases, in their order in CASES — only projects that
+// have a case page, so every card leads somewhere.
+const moreWorksOf = (c: Case) =>
+  CASES.filter((other) => other.slug !== c.slug)
+    .map((other) => projectByName(other.title))
+    .filter((p): p is Project => !!p?.href)
+    .slice(0, 3);
 
 /* ------------------------------------------------------------------ desktop */
 

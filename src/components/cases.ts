@@ -2,7 +2,8 @@
  * The case pages (/cases/[slug]), Behance-style: an intro (title, summary and a
  * table of facts), then the work itself as rows of image blocks, then "More
  * works". Adding a case is only data — drop its images in /public/cases/<slug>/
- * (videos stay on Vimeo, embedded by id) and add an entry here.
+ * (videos stay on Vimeo, embedded by id) and add an entry here. Each case's
+ * "More works" shows the other cases (CaseCanvas), so a new one joins them.
  */
 import type { Seal } from "./Seals";
 import { ONPROFIT_SEALS } from "./projects";
@@ -53,8 +54,6 @@ export type Case = {
   /** The facts table; a value with `href` links out (in a new tab). */
   facts: { label: string; value: string; href?: string }[];
   rows: CaseRow[];
-  /** Names from PROJECTS (projects.ts) shown under "More works". */
-  moreWorks: string[];
 };
 
 export const CASES: Case[] = [
@@ -92,7 +91,6 @@ export const CASES: Case[] = [
       wide({ src: "/cases/onprofit/behance-14.png", alt: "Cartazes da campanha da OnProfit" }),
       wide({ src: "/cases/onprofit/behance-15.png", alt: "Fachada com o símbolo da OnProfit e ecobag da marca" }),
     ],
-    moreWorks: ["Heineken", "Farol Santander", "Holly Bakehouse"],
   },
   {
     slug: "tcl-semp",
@@ -117,7 +115,6 @@ export const CASES: Case[] = [
       full({ src: "/cases/tcl-semp/behance-07.webp", alt: "Página de produto da TV de 32” e 43” FHD, com as especificações, nas versões desktop e celular" }, 2880, 2130),
       full({ src: "/cases/tcl-semp/behance-08.webp", alt: "Pessoa diante de um monitor com o site da TCL SEMP, sobre fundo vermelho" }, 2880, 2160),
     ],
-    moreWorks: ["OnProfit", "FTD Educação", "Hungara Lanches"],
   },
   {
     slug: "remapp",
@@ -157,7 +154,6 @@ export const CASES: Case[] = [
       full({ src: "/cases/remapp/behance-22.webp", padY: true, alt: "Perfil da Remapp nas redes sociais e copo com a marca" }, 1920, 1040),
       full({ src: "/cases/remapp/behance-23.webp", alt: "Painel luminoso da Remapp num corredor" }, 1920, 1280),
     ],
-    moreWorks: ["OnProfit", "TCL SEMP", "FTD Educação"],
   },
   {
     slug: "holly-bakehouse",
@@ -194,7 +190,6 @@ export const CASES: Case[] = [
       full({ src: "/cases/holly-bakehouse/behance-20.webp", alt: "Site da Holly Bakehouse no navegador e copo de café com a marca" }, 1921, 1081),
       full({ src: "/cases/holly-bakehouse/behance-21.webp", alt: "Cartazes de cookies na fachada da Holly Bakehouse" }, 1921, 1081),
     ],
-    moreWorks: ["OnProfit", "TCL SEMP", "Remapp"],
   },
 ];
 

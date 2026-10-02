@@ -2,7 +2,7 @@
 
 # Publishing
 
-Production is https://adriel-portfolio-iota.vercel.app (Vercel project `adriel-portfolio`, Hobby plan,
+Production is https://adrielcolaco.com (Vercel project `adriel-portfolio`, Hobby plan,
 team "Gabriel Leonardo's projects").
 
 **To publish, commit and push to `main`.** The `Deploy` workflow in `.github/workflows/deploy.yml`
@@ -65,5 +65,9 @@ can realistically hit:
 
 Hobby is for personal, non-commercial use. If the site starts selling something directly, the
 project needs to move to Pro.
+
+Domain `adrielcolaco.com` is registered on Cloudflare (account "Adriel Colaço"), with DNS there pointing
+to Vercel. Both records must stay "DNS only" (grey cloud): turning the Cloudflare proxy on breaks
+Vercel's SSL certificate. `www` redirects to the apex with a 308, configured in Vercel.
 
 Current usage: Vercel dashboard, team settings, Usage. GitHub: organization settings, Billing.

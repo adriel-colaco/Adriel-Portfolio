@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import BlurLetters, { type LetterPhase } from "./BlurLetters";
 import { prefersReducedMotion } from "./parallaxTicker";
 
@@ -38,7 +38,7 @@ export default function BlurHoverLink({
   href: string;
   label: string;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const [tone, setTone] = useState<Tone>("ink");
   const [phase, setPhase] = useState<LetterPhase>("rest");

@@ -12,7 +12,7 @@
  * On hover a ribbon slides a little further down (it's drawn longer than it
  * shows, running up past the frame's top edge, which clips it — so it reads
  * as the ribbon lengthening, not coming loose) and, when it has a `feature`, a
- * tooltip opens under it, like Behance's: "Destaque no Behance" and the
+ * tooltip opens under it, like Behance's: "Featured on Behance" and the
  * gallery that featured the project.
  *
  * Sizes are in design px, passed through the canvas's own `cqw` helper.
@@ -39,7 +39,7 @@ const RIBBON = `M0 -${RUN_UP}H50V72L25 60L0 72Z`;
 
 const HOVER_DROP = 6; // how far a ribbon slides down on hover (design px; < RUN_UP in px)
 // The tooltip, after Behance's featured card: white, rounded, a soft shadow
-// shared with its pointer, an uppercase grey "Destaque no Behance" over the
+// shared with its pointer, an uppercase grey "Featured on Behance" over the
 // gallery in the site's blue — set in the site's mono (semibold, as Behance's
 // bold sans). A small, fixed size in screen px (not the canvas's scale): it's
 // interface, so it reads the same on a phone as on a wide screen.
@@ -93,7 +93,7 @@ export default function Seals({
           <svg
             viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
             role="img"
-            aria-label={seal.feature ? `${seal.label}: destaque no Behance em ${seal.feature}` : seal.label}
+            aria-label={seal.feature ? `${seal.label}: featured on Behance in ${seal.feature}` : seal.label}
             className="block overflow-visible transition-transform duration-(--dur-ui) ease-(--ease-ui) group-hover/seal:translate-y-(--seal-drop)"
             style={{ width: unit(width), height: unit((width * VIEW_H) / VIEW_W) }}
           >
@@ -134,7 +134,7 @@ export default function Seals({
               <span
                 className="flex flex-col gap-1.5 rounded-lg bg-white px-3 py-2.5 font-mono font-semibold leading-none"
               >
-                <span className="text-[10px] uppercase tracking-[0.02em] text-muted">Destaque no Behance</span>
+                <span className="text-[10px] uppercase tracking-[0.02em] text-muted">Featured on Behance</span>
                 <span className="text-[13px] tracking-[-0.02em] text-ink">
                   {seal.feature}
                   {seal.date && (

@@ -35,8 +35,8 @@ const LINE_TOP = TITLE_TOP + 16 * 1.4 + GAP;
 const CONTENT_TOP = LINE_TOP + 1 + GAP;
 const ITEM_STEP = 24 + 12;
 const BORDERS = 2;
-// The intro paragraph's card: its text wraps to four lines (16px × 1.4).
-const INTRO_HEIGHT = CONTENT_TOP + 4 * 16 * 1.4 + GAP + BORDERS;
+// The intro paragraph's card: its text wraps to seven lines (16px × 1.4).
+const INTRO_HEIGHT = CONTENT_TOP + 7 * 16 * 1.4 + GAP + BORDERS;
 const pillarHeight = (items: number) => CONTENT_TOP + items * ITEM_STEP - 12 + GAP + BORDERS;
 
 const LINE_AT = 0; // the card's top hairline fades in as it's revealed…

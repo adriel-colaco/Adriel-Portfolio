@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import ItalicI from "./ItalicI";
@@ -10,11 +12,40 @@ import SocialIcons from "./SocialIcons";
 import BlurHoverLink from "./BlurHoverLink";
 import { useEntrance } from "./Entrance";
 
-const LINKS = [
+// "Work" and "Contact" scroll the home to a section (scrollToSection): from
+// another page they go to the home with the section's hash, and the home
+// scrolls there once it's loaded.
+type Section = "work" | "contact";
+const LINKS: { label: string; href: string; section?: Section }[] = [
   { label: "Home", href: "/" },
-  { label: "Work", href: "#" },
-  { label: "Contact", href: "#" },
+  { label: "Work", href: "/#work", section: "work" },
+  { label: "Contact", href: "/#contact", section: "contact" },
 ];
+
+/** Scrolls the home to a section: "work" brings the first row of cases (its
+ *  "Recent work" label, on whichever canvas is showing) to just under the
+ *  header; "contact" goes to the very end, where the footer has flooded in. */
+function scrollToSection(section: Section, behavior: ScrollBehavior = "smooth") {
+  let top = document.documentElement.scrollHeight;
+  if (section === "work") {
+    const anchor = Array.from(document.querySelectorAll<HTMLElement>('[data-anchor="work"]')).find(
+      (n) => n.getClientRects().length > 0,
+    );
+    if (!anchor) return;
+    // --header-bottom can be a calc() (scaled header): measure it on a probe.
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;visibility:hidden;height:var(--header-bottom)";
+    document.body.appendChild(probe);
+    const headerBottom = probe.offsetHeight;
+    probe.remove();
+    // Its layout position, not its rendered one: the label may still be
+    // rising in (its entrance transform) when the home has just loaded.
+    let y = 0;
+    for (let n: HTMLElement | null = anchor; n; n = n.offsetParent as HTMLElement | null) y += n.offsetTop;
+    top = y - headerBottom - 20;
+  }
+  window.scrollTo({ top, behavior: prefersReducedMotion() ? "auto" : behavior });
+}
 
 // Contact details shown at the foot of the open menu (Figma 37:34).
 const CONTACTS = [
@@ -57,6 +88,28 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
   const enterMenu = blur && open;
   const [atFooter, setAtFooter] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname();
+
+  // A section link on the home scrolls there (once the menu has let go of the
+  // page's scroll); elsewhere it navigates to the home with the hash.
+  const onLink = (section?: Section) => (e: ReactMouseEvent) => {
+    setOpen(false);
+    if (!section || pathname !== "/") return;
+    e.preventDefault();
+    history.replaceState(null, "", `#${section}`);
+    setTimeout(() => scrollToSection(section), 50);
+  };
+
+  // Arriving on the home with a section's hash (from another page's menu):
+  // jump there once the page has laid out, then once more after the page
+  // transition has settled, in case anything above it moved meanwhile.
+  useEffect(() => {
+    if (pathname !== "/") return;
+    const section = window.location.hash.slice(1);
+    if (section !== "work" && section !== "contact") return;
+    const ids = [400, 1200].map((ms) => setTimeout(() => scrollToSection(section, "auto"), ms));
+    return () => ids.forEach(clearTimeout);
+  }, [pathname]);
   const iconRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -207,8 +260,9 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
               <div className="flex items-center gap-3 landscape-tablet:gap-[20px]">
                 {/* Language switch (Figma 24:777): the current language in dark
                     grey, the other one light. Display-only until the PT version
-                    exists. Smaller on mobile. */}
-                <div className="flex items-center gap-[3px] font-mono text-[12px] leading-[1.4] landscape-tablet:gap-[4px] landscape-tablet:text-[16px]">
+                    exists. Smaller on mobile. Hidden for now (the PT version
+                    doesn't exist yet); swap `hidden` back to `flex` to show it. */}
+                <div className="hidden items-center gap-[3px] font-mono text-[12px] leading-[1.4] landscape-tablet:gap-[4px] landscape-tablet:text-[16px]">
                   <span aria-current="true" className="text-[#1e1e1e] [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                     EN
                   </span>
@@ -300,13 +354,13 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
                         <BlurHoverLink
                           href={link.href}
                           label={link.label}
-                          onClick={() => setOpen(false)}
+                          onClick={onLink(link.section)}
                           className="flex items-center font-serif text-[72px] leading-[0.95] landscape-tablet:text-[86px]"
                         />
                       ) : (
                         <Link
                           href={link.href}
-                          onClick={() => setOpen(false)}
+                          onClick={onLink(link.section)}
                           className="group flex items-center font-serif text-[72px] leading-[0.95] text-ink transition-colors duration-(--dur-hover) ease-(--ease-fade) hover:text-[#1e1e1e] landscape-tablet:text-[86px]"
                         >
                           {/* Line grows in on hover and pushes the label right. */}

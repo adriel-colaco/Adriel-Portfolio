@@ -62,7 +62,7 @@ export const PILLARS = [
 
 // The intro under the "Capabilities" title (Figma 1:386 on desktop, 1:115 on mobile).
 export const CAPABILITIES_INTRO =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+  "Designer with experience in UX/UI, Brand Design, and Art Direction, connecting design, technology, and strategy to create clear, functional, and consistent digital and visual experiences.";
 
 const ROW = 24; // title row height (the icon's box); the 18px label's cap height is centred in it
 const LABEL_CAP = 18 * 0.71; // the label, trimmed to Geist Mono's cap height
@@ -156,7 +156,7 @@ export default function Capabilities({ style }: { style?: CSSProperties }) {
           style={{
             marginTop: u(20),
             paddingInline: u(20),
-            fontSize: u(18),
+            fontSize: u(16), // the case intro's summary size,
             lineHeight: 1.4,
             letterSpacing: "-0.03em",
             ...timing(ITEMS_AT),

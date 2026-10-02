@@ -9,6 +9,7 @@ import SplitText from "./SplitText";
 import { INTRO_DURATION, INTRO_EASE } from "./intro";
 import { useMagnetPull } from "./useMagnetPull";
 import { useEntrance } from "./Entrance";
+import SocialIcons from "./SocialIcons";
 
 // A short hold (in viewport heights) after the line's draw target completes,
 // before the circle starts, so the line's own eased draw visibly settles at its
@@ -381,19 +382,9 @@ function FooterContent() {
       </p>
 
       {/* Social row (Frame 427319153) */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/figma/footer-socials.svg"
-        alt="Social media"
-        className={`absolute block ${socials.className}`}
-        style={{
-          right: u(40),
-          top: u(708),
-          width: u(197.338),
-          height: u(20),
-          ...socials.style,
-        }}
-      />
+      <div className={`absolute ${socials.className}`} style={{ right: u(40), top: u(708), ...socials.style }}>
+        <FooterSocials scale={iconScale(FRAME, 20)} />
+      </div>
     </div>
   );
 }
@@ -488,13 +479,9 @@ function MobileFooterContent() {
             >
               ©2026
             </p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/figma/footer-socials.svg"
-              alt="Social media"
-              className={`block ${bottomRow.className}`}
-              style={{ width: um(150), height: um(15.2), ...bottomRow.style }}
-            />
+            <div className={bottomRow.className} style={bottomRow.style}>
+              <FooterSocials scale={iconScale(FRAME_M, 15.2)} />
+            </div>
           </div>
         </div>
       </div>
@@ -584,13 +571,9 @@ function TabletFooterContent() {
             <p className="font-mono whitespace-nowrap" style={{ fontSize: ut(18), lineHeight: 1.4, color: FG }}>
               {inView && <SplitText text="©2026" stagger={0.07} startDelay={0.7} />}
             </p>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/figma/footer-socials.svg"
-              alt="Social media"
-              className={`block ${bottomRow.className}`}
-              style={{ width: ut(197.338), height: ut(20), ...bottomRow.style }}
-            />
+            <div className={bottomRow.className} style={bottomRow.style}>
+              <FooterSocials scale={iconScale(FRAME_T, 20)} />
+            </div>
           </div>
         </div>
       </div>
@@ -629,6 +612,21 @@ function TabletPill({
         {children}
       </span>
     </a>
+  );
+}
+
+/** The icons' scale for a row `height` design px tall on a `frame`-px canvas,
+ *  as a plain number (tan(atan2(a, b)) is a / b), so they grow with the footer
+ *  like its other `cqw` sizes. */
+const iconScale = (frame: number, height: number) => `calc(tan(atan2(100cqw, ${frame}px)) * ${height / 20})`;
+
+/** The footer's social links: the menu's icons, off-white on the blue. */
+function FooterSocials({ scale }: { scale: string }) {
+  return (
+    <SocialIcons
+      style={{ "--icon-scale": scale } as CSSProperties}
+      linkClassName="text-[#e0e0e0] hover:text-white"
+    />
   );
 }
 

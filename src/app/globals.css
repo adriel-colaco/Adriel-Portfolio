@@ -346,6 +346,14 @@ button[data-cursor-magnet][data-magnet-active] {
   --cta-glow: 0;
   /* The soft edge eases out (several stops) instead of fading linearly, which
      would leave a visible rim where it ends. */
+  -webkit-mask-image: radial-gradient(
+    circle at 50% 145%,
+    #000 calc(var(--cta-glow) * 180% - 80%),
+    rgb(0 0 0 / 0.7) calc(var(--cta-glow) * 180% - 60%),
+    rgb(0 0 0 / 0.35) calc(var(--cta-glow) * 180% - 40%),
+    rgb(0 0 0 / 0.12) calc(var(--cta-glow) * 180% - 20%),
+    transparent calc(var(--cta-glow) * 180%)
+  );
   mask-image: radial-gradient(
     circle at 50% 145%,
     #000 calc(var(--cta-glow) * 180% - 80%),
@@ -354,12 +362,34 @@ button[data-cursor-magnet][data-magnet-active] {
     rgb(0 0 0 / 0.12) calc(var(--cta-glow) * 180% - 20%),
     transparent calc(var(--cta-glow) * 180%)
   );
-  transition: --cta-glow 0.9s var(--ease-fade);
+  /* Invisible at rest whatever the mask does (a browser that can't draw it
+     would otherwise show the whole blue layer); it only fades out once the
+     glow has sunk away. */
+  opacity: 0;
+  transition:
+    --cta-glow 0.9s var(--ease-fade),
+    opacity 0s linear 0.9s;
 }
 .hero-cta:hover .hero-cta-glow,
 .hero-cta[data-magnet-active] .hero-cta-glow {
   --cta-glow: 1;
-  transition: --cta-glow 1s var(--ease-enter);
+  opacity: 1;
+  transition:
+    --cta-glow 1s var(--ease-enter),
+    opacity 0s;
+}
+/* Touch screens: no hover state, so a tap can't leave the pill stuck blue. */
+@media (hover: none) {
+  .hero-cta .hero-cta-glow {
+    opacity: 0 !important;
+  }
+  .hero-cta .hero-cta-dark > * {
+    opacity: 1 !important;
+    translate: none !important;
+  }
+  .hero-cta .hero-cta-white > * {
+    opacity: 0 !important;
+  }
 }
 .hero-cta-light {
   color: #ffffff;

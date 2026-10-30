@@ -9,7 +9,7 @@ import ProjectCursor from "./ProjectCursor";
 import Reveal from "./Reveal";
 import Seals from "./Seals";
 import { CASES, type Case, type CaseBlock } from "./cases";
-import { Curtain, CURTAIN_DROP, CURTAIN_LEAD, curtainPieceAt, curtainReach } from "./Curtain";
+import { CURTAIN_DROP, CURTAIN_LEAD, curtainPieceAt, curtainReach } from "./Curtain";
 import { INTRO_DURATION, INTRO_EASE } from "./intro";
 import { projectByName, tagStyle, tagsBoxStyle, type Project, type TagsVariant } from "./projects";
 
@@ -21,9 +21,12 @@ import { projectByName, tagStyle, tagsBoxStyle, type Project, type TagsVariant }
  * table on the right — the rows of image blocks, then "More works". The page's
  * FooterReveal follows.
  *
- * At load the intro's boxes are already in place and only their texts rise in,
- * then the first image unveils top to bottom like a curtain; the rest of the
- * blocks are simply there. "More works" rises in as it scrolls into view.
+ * The home's grid runs behind it all, everything sitting 10px inside its
+ * strokes; the intro has no boxes, the grid running on behind it — only the
+ * facts table's rows are opaque, so no stroke cuts through a row. At load its texts drop in one
+ * after the other down the page, then the first image unveils top to bottom
+ * like a curtain; the rest of the blocks are simply there. "More works" rises
+ * in as it scrolls into view.
  */
 
 const scale = (frame: number) => (px: number) => `${((px * 100) / frame).toFixed(4)}cqw`;
@@ -73,31 +76,46 @@ const sealsEnter = { at: pieceAt(0), step: STAGGER };
 
 
 const DEFAULT_ROW_HEIGHT = 728;
-const CONTENT_W = 1400; // desktop content width (20px margins)
+const CONTENT_W = 1400; // the width the rows' heights (cases.ts) are designed at
 const GAP = 20; // desktop gap between blocks
 
-// Desktop columns (20px margin + 335px cols + 20px gaps), as on the home.
-const COLS = [20, 375, 730, 1085];
-const COL_W = 335;
+// The home's background grid: single 1.5px strokes at the margins and between
+// the columns, the content 10px inside them (as the home's cards are).
+const GRID_STROKE = 1.5;
+const GRID = [20, 365, 720, 1075, 1420];
+const INSET = 10;
+const INNER_W = CONTENT_W - 2 * INSET; // desktop content width: 1380
+// "More works": the title column, then the three cards, each 10px inside its
+// grid strokes (the outer columns lose 10px to the margin stroke).
+const WORK_COLS = [325, 335, 335, 325];
 // The case title matches the home's headings in the same kind of box: the
 // Services statement on desktop (55), the hero heading on mobile (47).
 const TITLE_SIZE = 55;
 const TITLE_SIZE_MOBILE = 47;
 const TITLE_BOX_M = 340; // the mobile title box's height (at least)
-// Mobile columns (10px margin + 77.5px cols + 10px gaps).
-const COLS_M = [10, 97.5, 185, 272.5];
-const COL_W_M = 77.5;
+// Mobile grid strokes, as on the home's mobile canvas.
+const GRID_M = [10, 92.5, 180, 267.5, 350];
 
-function Grid({ cols, width, unit }: { cols: number[]; width: number; unit: (px: number) => string }) {
-  return cols.map((left) => (
+function Grid({ lines, unit }: { lines: number[]; unit: (px: number) => string }) {
+  return lines.map((x) => (
     <span
-      key={left}
+      key={x}
       aria-hidden
-      className="absolute top-0 bottom-0 border-x border-line"
-      style={{ left: unit(left), width: unit(width) }}
+      className="absolute top-0 bottom-0 bg-line"
+      style={{ left: `calc(${unit(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
     />
   ));
 }
+
+// The facts table's lines, at the grid's weight. The table reaches out over the
+// content's 10px inset to the grid strokes on either side (stopping at their
+// edge, so they stay whole), its lines running stroke to stroke; its texts
+// keep their inset.
+const RULE = "border-t-[1.5px] border-line";
+const reachStrokes = (unit: (px: number) => string): CSSProperties => ({
+  marginInline: `calc(${GRID_STROKE / 2}px - ${unit(INSET)})`,
+});
+const rowPad = (unit: (px: number) => string, pad: number) => `calc(${unit(pad + INSET)} - ${GRID_STROKE / 2}px)`;
 
 // The home's tags (projects.ts), on the same canvas scale.
 function Tag({ label, unit, variant }: { label: string; unit: (px: number) => string; variant: TagsVariant }) {
@@ -153,14 +171,14 @@ function WorkCard({
 /** A block's content: an image, or a Vimeo video playing as a silent
  *  background loop (the player's background mode: autoplay, loop, muted, no
  *  controls; `dnt` so it sets no tracking cookies). */
-function BlockMedia({ block, sizes, eager }: { block: CaseBlock; sizes: string; eager?: boolean }) {
+function BlockMedia({ block, sizes }: { block: CaseBlock; sizes: string }) {
   if ("vimeo" in block) {
     return (
       <iframe
         src={`https://player.vimeo.com/video/${block.vimeo}?background=1&dnt=1`}
         title={block.alt}
         allow="autoplay; fullscreen; picture-in-picture"
-        loading={eager ? "eager" : "lazy"}
+        loading="lazy"
         // 2px past the block on every side (clipped by it): the player fits
         // the video inside itself on whole pixels, which on a fractional
         // (cqw-sized) block leaves a sub-pixel sliver of the backdrop showing
@@ -178,7 +196,11 @@ function BlockMedia({ block, sizes, eager }: { block: CaseBlock; sizes: string; 
       alt={alt}
       fill
       sizes={sizes}
-      loading={eager ? "eager" : undefined}
+      // Lazy even for the first row: the page renders all three layouts
+      // (desktop, tablet, mobile) and hides two, and an eager image or player
+      // in a hidden one would still download. A lazy one in the visible
+      // layout's first row is in view, so it loads straight away anyway.
+      loading="lazy"
       className="object-cover"
       style={{ objectPosition }}
     />
@@ -267,15 +289,16 @@ function CaseDesktop({ data }: { data: Case }) {
       <ProjectCursor />
       <div
         className="relative w-full"
-        style={{ paddingTop: `calc(var(--header-bottom) + ${u(20)})`, paddingInline: u(20), paddingBottom: u(200) }}
+        style={{ paddingTop: `calc(var(--header-bottom) + ${u(20)})`, paddingInline: u(GRID[0] + INSET), paddingBottom: u(200) }}
       >
-        <Grid cols={COLS} width={COL_W} unit={u} />
+        <Grid lines={GRID} unit={u} />
 
-        {/* Intro (Figma 2:94 + 2:81): two 690×410 boxes (taller when a
-            longer summary needs it) */}
-        <div className="relative grid" style={{ gridTemplateColumns: `repeat(2, ${u(690)})`, columnGap: u(GAP), minHeight: u(410) }}>
-          <Curtain at={BOX_AT} lineAt={LINE_AT}>
-            <div className="relative flex h-full items-end overflow-clip border border-t-0 border-line bg-canvas">
+        {/* Intro (Figma 2:94 + 2:81): two 680×410 areas, each across two
+            columns (taller when a longer summary needs it), no box around
+            them — the grid frames them, as on the home. */}
+        <div className="relative grid" style={{ gridTemplateColumns: `repeat(2, ${u(680)})`, columnGap: u(GAP), minHeight: u(410) }}>
+          <div className="relative">
+            <div className="relative flex h-full items-end">
               {data.seals && <Seals seals={data.seals} unit={u} width={36} textSize={17.6} side="left" inset={20} enter={sealsEnter} />}
               <div className="flex flex-col" style={{ padding: u(20), gap: u(20) }}>
                 <h1 className={`${DROP} font-serif leading-none text-ink`} style={{ fontSize: u(TITLE_SIZE), ...timing(introAt(INTRO_DESKTOP, data.facts.length).title) }}>
@@ -289,18 +312,18 @@ function CaseDesktop({ data }: { data: Case }) {
                 </p>
               </div>
             </div>
-          </Curtain>
+          </div>
 
-          <Curtain at={BOX_AT} lineAt={LINE_AT}>
+          <div className="relative">
             <dl
-              className="flex h-full flex-col justify-end overflow-clip border border-t-0 border-line bg-canvas font-mono"
-              style={{ fontSize: u(18), lineHeight: 1.4, letterSpacing: "-0.03em" }}
+              className="flex h-full flex-col justify-end font-mono"
+              style={{ fontSize: u(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(u) }}
             >
               {data.facts.map((fact, i) => (
                 <div
                   key={fact.label}
-                  className={`${DROP} flex items-center justify-between border-t border-line`}
-                  style={{ height: u(60), paddingInline: u(20), ...timing(introAt(INTRO_DESKTOP, data.facts.length).row(i)) }}
+                  className={`${DROP} flex items-center justify-between bg-canvas ${RULE} ${i === data.facts.length - 1 ? "border-b-[1.5px]" : ""}`}
+                  style={{ height: u(60), paddingInline: rowPad(u, 20), ...timing(introAt(INTRO_DESKTOP, data.facts.length).row(i)) }}
                 >
                   <dt className="whitespace-nowrap text-muted">
                     {fact.label}
@@ -311,20 +334,21 @@ function CaseDesktop({ data }: { data: Case }) {
                 </div>
               ))}
             </dl>
-          </Curtain>
+          </div>
         </div>
 
         {/* Image blocks, row by row, edge to edge (no gaps between them, as on Behance) */}
         <div className="relative flex flex-col" style={{ marginTop: u(GAP) }}>
           {data.rows.map((row, r) => {
             const n = row.images.length;
-            const cellW = CONTENT_W / n;
+            const cellW = INNER_W / n;
+            const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * INNER_W) / CONTENT_W + (isPadded(row) ? 2 * PAD_DESKTOP : 0);
             return (
-              <div key={r} className="flex" style={{ height: u((row.height ?? DEFAULT_ROW_HEIGHT) + (isPadded(row) ? 2 * PAD_DESKTOP : 0)) }}>
+              <div key={r} className="flex" style={{ height: u(height) }}>
                 {row.images.map((block, i) => (
                   <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: u(cellW), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
                     <Inset pad={isPadded(row) ? u(PAD_DESKTOP) : undefined}>
-                      <BlockMedia block={block} sizes={`${Math.round((cellW / 1440) * 100)}vw`} eager={r === 0} />
+                      <BlockMedia block={block} sizes={`${Math.round((cellW / 1440) * 100)}vw`} />
                     </Inset>
                   </Block>
                 ))}
@@ -337,14 +361,14 @@ function CaseDesktop({ data }: { data: Case }) {
         {works.length > 0 && (
           <Reveal
             className="relative grid"
-            style={{ marginTop: u(200), gridTemplateColumns: `repeat(4, ${u(COL_W)})`, columnGap: u(GAP) }}
+            style={{ marginTop: u(200), gridTemplateColumns: WORK_COLS.map(u).join(" "), columnGap: u(GAP) }}
             rootMargin="0px 0px -20% 0px"
           >
             <div className="flex flex-col justify-between" style={{ height: u(448) }}>
               <div>
                 <div
                   className="rise flex items-center justify-between text-muted"
-                  style={{ height: u(ROW), paddingInline: u(20), fontSize: u(18), lineHeight: 1.4, ...timing(0) }}
+                  style={{ height: u(ROW), paddingInline: u(10), fontSize: u(18), lineHeight: 1.4, ...timing(0) }}
                 >
                   <h2 className="whitespace-nowrap font-mono font-normal [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                     More works
@@ -354,17 +378,17 @@ function CaseDesktop({ data }: { data: Case }) {
                 <div
                   aria-hidden
                   className="draw bg-line"
-                  style={{ marginTop: u(20 - (ROW - LABEL_CAP) / 2), height: 1, ...timing(0.1) }}
+                  style={{ marginTop: u(20 - (ROW - LABEL_CAP) / 2), marginInline: `-${u(INSET)}`, height: `${GRID_STROKE}px`, ...timing(0.1) }}
                 />
               </div>
-              <div className="rise" style={{ marginInline: u(20), height: u(56), ...timing(0.3) }}>
+              <div className="rise" style={{ marginInline: u(10), height: u(56), ...timing(0.3) }}>
                 <HeroCTA label="See more projects" icon="plus" href="/" fontSize={u(28)} iconSize={u(24)} paddingLeft={u(24)} paddingRight={u(20)} />
               </div>
             </div>
 
             {works.map((project, i) => (
               <div key={project.name} className="rise" style={timing(0.15 + i * STAGGER)}>
-                <WorkCard project={project} unit={u} imageHeight={448} titleSize={36} variant="desktop" frame={{ width: COL_W, canvas: 1440 }} />
+                <WorkCard project={project} unit={u} imageHeight={448} titleSize={36} variant="desktop" frame={{ width: WORK_COLS[i + 1], canvas: 1440 }} />
               </div>
             ))}
           </Reveal>
@@ -381,9 +405,9 @@ function CaseDesktop({ data }: { data: Case }) {
 // straight under the title box, one curtain, as on mobile — side by side they
 // would be too narrow for the longer facts), the blocks at the full content
 // width with their desktop proportions, then "More works" on the 2 columns.
-const CONTENT_W_T = 780;
-const COLS_T = [20, 420];
-const COL_W_T = 380;
+const CONTENT_W_T = 760; // 10px inside the margin strokes
+const GRID_T = [20, 410, 800];
+const COL_W_T = 370; // a "More works" card, 10px inside its strokes
 const TITLE_SIZE_TABLET = 64;
 const TITLE_BOX_T = 360; // the title box's height (at least)
 const INTRO_TABLET: IntroLayout = { height: (n) => TITLE_BOX_T + n * 60, title: 130, summary: 214, rowHeight: 60 };
@@ -398,14 +422,14 @@ function CaseTablet({ data }: { data: Case }) {
       <ProjectCursor />
       <div
         className="relative w-full"
-        style={{ paddingTop: `calc(var(--header-bottom) + ${ut(20)})`, paddingInline: ut(20), paddingBottom: ut(160) }}
+        style={{ paddingTop: `calc(var(--header-bottom) + ${ut(20)})`, paddingInline: ut(GRID_T[0] + INSET), paddingBottom: ut(160) }}
       >
-        <Grid cols={COLS_T} width={COL_W_T} unit={ut} />
+        <Grid lines={GRID_T} unit={ut} />
 
         <div className="relative flex flex-col" style={{ gap: ut(GAP) }}>
-          <Curtain at={BOX_AT} lineAt={LINE_AT}>
+          <div className="relative">
             <div
-              className="relative flex flex-col justify-end overflow-clip border border-t-0 border-line bg-canvas"
+              className="relative flex flex-col justify-end"
               style={{ minHeight: ut(TITLE_BOX_T), padding: ut(20), gap: ut(20) }}
             >
               {data.seals && <Seals seals={data.seals} unit={ut} width={36} textSize={17.6} side="left" inset={20} enter={sealsEnter} />}
@@ -421,14 +445,14 @@ function CaseTablet({ data }: { data: Case }) {
             </div>
 
             <dl
-              className="flex flex-col overflow-clip border border-t-0 border-line bg-canvas font-mono"
-              style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em" }}
+              className="flex flex-col border-b-[1.5px] border-line font-mono"
+              style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(ut) }}
             >
               {data.facts.map((fact, i) => (
                 <div
                   key={fact.label}
-                  className={`${DROP} flex items-center justify-between ${i > 0 ? "border-t border-line" : ""}`}
-                  style={{ height: ut(60), paddingInline: ut(20), gap: ut(20), ...timing(at.row(i)) }}
+                  className={`${DROP} flex items-center justify-between bg-canvas ${RULE}`}
+                  style={{ height: ut(60), paddingInline: rowPad(ut, 20), gap: ut(20), ...timing(at.row(i)) }}
                 >
                   <dt className="whitespace-nowrap text-muted">{fact.label}</dt>
                   <dd className="whitespace-nowrap text-black">
@@ -437,7 +461,7 @@ function CaseTablet({ data }: { data: Case }) {
                 </div>
               ))}
             </dl>
-          </Curtain>
+          </div>
 
           {/* Image blocks, row by row and edge to edge: the desktop's rows scaled to the content width */}
           <div className="flex flex-col">
@@ -450,7 +474,7 @@ function CaseTablet({ data }: { data: Case }) {
                   {row.images.map((block, i) => (
                     <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative h-full overflow-hidden" style={{ width: ut(cellW), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
                       <Inset pad={isPadded(row) ? ut(PAD_TABLET) : undefined}>
-                        <BlockMedia block={block} sizes={`${Math.round((cellW / 820) * 100)}vw`} eager={r === 0} />
+                        <BlockMedia block={block} sizes={`${Math.round((cellW / 820) * 100)}vw`} />
                       </Inset>
                     </Block>
                   ))}
@@ -466,7 +490,7 @@ function CaseTablet({ data }: { data: Case }) {
           <Reveal className="relative" style={{ marginTop: ut(160) }} rootMargin="0px 0px -20% 0px">
             <div
               className="rise flex items-center justify-between text-muted"
-              style={{ height: ut(ROW), paddingInline: ut(20), fontSize: ut(18), lineHeight: 1.4, ...timing(0) }}
+              style={{ height: ut(ROW), paddingInline: ut(10), fontSize: ut(18), lineHeight: 1.4, ...timing(0) }}
             >
               <h2 className="whitespace-nowrap font-mono font-normal [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                 More works
@@ -476,7 +500,7 @@ function CaseTablet({ data }: { data: Case }) {
             <div
               aria-hidden
               className="draw bg-line"
-              style={{ marginTop: ut(20 - (ROW - LABEL_CAP) / 2), height: 1, ...timing(0.1) }}
+              style={{ marginTop: ut(20 - (ROW - LABEL_CAP) / 2), marginInline: `-${ut(INSET)}`, height: `${GRID_STROKE}px`, ...timing(0.1) }}
             />
 
             <div
@@ -489,7 +513,7 @@ function CaseTablet({ data }: { data: Case }) {
                 </div>
               ))}
               <div className="flex flex-col justify-end" style={{ height: ut(WORK_IMAGE_T) }}>
-                <div className="rise" style={{ marginInline: ut(20), height: ut(56), ...timing(0.3) }}>
+                <div className="rise" style={{ marginInline: ut(10), height: ut(56), ...timing(0.3) }}>
                   <HeroCTA label="See more projects" icon="plus" href="/" fontSize={ut(28)} iconSize={ut(24)} paddingLeft={ut(24)} paddingRight={ut(20)} />
                 </div>
               </div>
@@ -506,7 +530,7 @@ function CaseTablet({ data }: { data: Case }) {
 // No mobile frame in Figma yet: the desktop stacked on the home's 360px grid —
 // the intro boxes one above the other, every block full width (keeping its
 // desktop proportions), then "More works" as a column of cards.
-const CONTENT_W_M = 340;
+const CONTENT_W_M = 320; // 10px inside the margin strokes
 const GAP_M = 10;
 
 function CaseMobile({ data }: { data: Case }) {
@@ -516,17 +540,16 @@ function CaseMobile({ data }: { data: Case }) {
     <div className="w-full landscape-tablet:hidden" style={{ containerType: "inline-size" }}>
       <div
         className="relative w-full"
-        style={{ paddingTop: `calc(var(--header-bottom) + ${um(GAP_M)})`, paddingInline: um(10), paddingBottom: um(100) }}
+        style={{ paddingTop: `calc(var(--header-bottom) + ${um(GAP_M)})`, paddingInline: um(GRID_M[0] + INSET), paddingBottom: um(100) }}
       >
-        <Grid cols={COLS_M} width={COL_W_M} unit={um} />
+        <Grid lines={GRID_M} unit={um} />
 
         <div className="relative flex flex-col" style={{ gap: um(GAP_M) }}>
-          {/* Intro: the title box with the facts table straight under it, as
-              one block (the table drops its top border so the seam stays 1px),
-              wiped in by one curtain. */}
-          <Curtain at={BOX_AT} lineAt={LINE_AT}>
+          {/* Intro: the title with the facts table straight under it, no box
+              around them (the grid frames them, as on the home). */}
+          <div className="relative">
               <div
-                className="relative flex flex-col justify-end overflow-clip border border-t-0 border-line bg-canvas"
+                className="relative flex flex-col justify-end"
                 style={{ minHeight: um(TITLE_BOX_M), paddingBlock: um(16), paddingInline: um(10), gap: um(16) }}
               >
                 {data.seals && <Seals seals={data.seals} unit={um} width={30} textSize={14.3} side="left" inset={10} enter={sealsEnter} />}
@@ -539,14 +562,14 @@ function CaseMobile({ data }: { data: Case }) {
               </div>
 
               <dl
-                className="flex flex-col overflow-clip border border-t-0 border-line bg-canvas font-mono"
-                style={{ fontSize: um(14), lineHeight: 1.4, letterSpacing: "-0.03em" }}
+                className="flex flex-col border-b-[1.5px] border-line font-mono"
+                style={{ fontSize: um(14), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(um) }}
               >
                 {data.facts.map((fact, i) => (
                   <div
                     key={fact.label}
-                    className={`${DROP} flex items-center justify-between ${i > 0 ? "border-t border-line" : ""}`}
-                    style={{ height: um(48), paddingInline: um(10), gap: um(16), ...timing(introAt(INTRO_MOBILE, data.facts.length).row(i)) }}
+                    className={`${DROP} flex items-center justify-between bg-canvas ${RULE}`}
+                    style={{ height: um(48), paddingInline: rowPad(um, 10), gap: um(16), ...timing(introAt(INTRO_MOBILE, data.facts.length).row(i)) }}
                   >
                     <dt className="whitespace-nowrap text-muted">
                       {fact.label}
@@ -557,7 +580,7 @@ function CaseMobile({ data }: { data: Case }) {
                   </div>
                 ))}
               </dl>
-          </Curtain>
+          </div>
 
           {/* Image blocks, stacked edge to edge */}
           <div className="flex flex-col">
@@ -568,7 +591,7 @@ function CaseMobile({ data }: { data: Case }) {
               return row.images.map((block, i) => (
                 <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative w-full overflow-hidden" style={{ height: um(height), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
                   <Inset pad={isPadded(row) ? um(PAD_MOBILE) : undefined}>
-                    <BlockMedia block={block} sizes="95vw" eager={r === 0} />
+                    <BlockMedia block={block} sizes="89vw" />
                   </Inset>
                 </Block>
               ));
@@ -582,23 +605,27 @@ function CaseMobile({ data }: { data: Case }) {
             <Reveal>
               <div
                 className="rise flex items-center justify-between text-muted"
-                style={{ paddingInline: um(10), fontSize: um(16), lineHeight: 1.4, ...timing(0) }}
+                style={{ fontSize: um(16), lineHeight: 1.4, ...timing(0) }}
               >
                 <h2 className="whitespace-nowrap font-mono font-normal">More works</h2>
                 <ArrowIcon glyph="down" style={{ width: um(20), height: um(20) }} />
               </div>
-              <div aria-hidden className="draw bg-line" style={{ marginTop: um(16), height: 1, ...timing(0.1) }} />
+              <div
+                aria-hidden
+                className="draw bg-line"
+                style={{ marginTop: um(16), marginInline: `-${um(INSET)}`, height: `${GRID_STROKE}px`, ...timing(0.1) }}
+              />
             </Reveal>
 
             {works.map((project) => (
               <Reveal key={project.name}>
                 <div className="rise" style={timing(0)}>
-                  <WorkCard project={project} unit={um} imageHeight={328} titleSize={32} variant="mobile" frame={{ width: 340, canvas: 360 }} />
+                  <WorkCard project={project} unit={um} imageHeight={328} titleSize={32} variant="mobile" frame={{ width: CONTENT_W_M, canvas: 360 }} />
                 </div>
               </Reveal>
             ))}
 
-            <Reveal style={{ marginInline: um(10), height: um(52) }}>
+            <Reveal style={{ height: um(52) }}>
               <div className="rise h-full" style={timing(0)}>
                 <HeroCTA label="See more projects" icon="plus" href="/" fontSize={um(24)} iconSize={um(22)} paddingLeft={um(22)} paddingRight={um(18)} />
               </div>

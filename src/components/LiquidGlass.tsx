@@ -83,8 +83,11 @@ function displacementMap(w: number, h: number, r: number) {
 }
 
 /** Whether this browser renders an SVG filter as a backdrop-filter (Chromium
- *  does; Safari and Firefox accept the syntax but draw nothing). */
+ *  does; Safari and Firefox accept the syntax but draw nothing) — and is worth
+ *  it: on touch devices (phones, tablets) the filter is too heavy for the GPU,
+ *  so they get the frosted glass. */
 function supportsSvgBackdrop() {
+  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return false;
   const ua = navigator.userAgent;
   if ((/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) || /Firefox/.test(ua)) return false;
   const probe = document.createElement("div");

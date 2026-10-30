@@ -402,15 +402,15 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
 
               {/* Contacts (mono label over value) on the left, socials on the
                   right; values and icons turn blue on hover. Stacks on phones. */}
-              <div className="flex flex-col items-end gap-10 p-6 landscape-tablet:flex-row landscape-tablet:items-end landscape-tablet:justify-between landscape-tablet:p-[50px] landscape-tablet:[zoom:var(--menu-zoom)]">
-                <div className="flex flex-col items-end gap-8 font-mono text-[14px] leading-[1.4] sm:flex-row sm:gap-[56px] landscape-tablet:items-start landscape-tablet:text-[18px]">
+              <div className="flex flex-col items-end gap-8 px-6 py-5 landscape-tablet:flex-row landscape-tablet:items-end landscape-tablet:justify-between landscape-tablet:px-[50px] landscape-tablet:py-[32px] landscape-tablet:[zoom:var(--menu-zoom)]">
+                <div className="flex flex-col items-end gap-6 font-mono text-[13px] leading-[1.4] sm:flex-row sm:gap-[48px] landscape-tablet:items-start landscape-tablet:text-[14px]">
                   {CONTACTS.map((c, i) => (
                     <div
                       key={c.label}
-                      className={`flex flex-col items-end gap-3 text-right landscape-tablet:items-start landscape-tablet:gap-[14px] landscape-tablet:text-left ${enterMenu ? "menu-blur-in" : ""}`}
+                      className={`flex flex-col items-end gap-2.5 text-right landscape-tablet:items-start landscape-tablet:gap-[10px] landscape-tablet:text-left ${enterMenu ? "menu-blur-in" : ""}`}
                       style={enterMenu ? { animationDelay: menuDelay(`contact-${i}` as (typeof MENU_ORDER)[number]) } : undefined}
                     >
-                      <p className="whitespace-nowrap text-[12px] text-muted [text-box-edge:cap_alphabetic] [text-box-trim:trim-both] landscape-tablet:text-[18px]">
+                      <p className="whitespace-nowrap text-[11px] text-muted opacity-50 [text-box-edge:cap_alphabetic] [text-box-trim:trim-both] landscape-tablet:text-[12px]">
                         {c.label}
                       </p>
                       <a

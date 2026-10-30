@@ -47,9 +47,11 @@ export const PROJECTS: Project[] = [
 // between pills, the box's inset from the image's corner, and the width they
 // wrap within (inset included), as Figma's "Tags container" does — short pairs
 // share a row, but a third tag like OnProfit's "Art Direction" drops to its own.
+// The tags sit as far from the image's edges as from each other (`inset` =
+// `gap`). `maxWidth` is the box's, inset included: it sets where they wrap.
 export const TAGS = {
-  desktop: { size: 13, pad: [12, 7], gap: 5, inset: 12, maxWidth: 224 },
-  mobile: { size: 11, pad: [9, 6], gap: 4, inset: 12, maxWidth: 189 },
+  desktop: { size: 13, pad: [12, 7], gap: 5, inset: 5, maxWidth: 210 },
+  mobile: { size: 11, pad: [9, 6], gap: 4, inset: 4, maxWidth: 173 },
 } as const;
 export type TagsVariant = keyof typeof TAGS;
 

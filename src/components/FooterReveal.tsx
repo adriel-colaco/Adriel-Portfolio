@@ -381,7 +381,7 @@ function FooterContent() {
       {/* ©2026 | credit */}
       <p
         className="absolute font-mono whitespace-nowrap"
-        style={{ left: u(40), top: u(705), fontSize: u(18), lineHeight: 1.4, color: FG }}
+        style={{ left: u(40), top: u(707), fontSize: u(14), lineHeight: 1.4, color: FG }}
       >
         {inView && <SplitText text={`©2026 | ${CREDIT}`} stagger={0.03} startDelay={0.7} />}
       </p>
@@ -479,7 +479,7 @@ function MobileFooterContent() {
           <div className="flex items-center justify-between">
             <p
               className={`font-mono whitespace-nowrap ${bottomRow.className}`}
-              style={{ fontSize: um(14), lineHeight: 1.4, color: FG, ...bottomRow.style }}
+              style={{ fontSize: um(13), lineHeight: 1.4, color: FG, ...bottomRow.style }}
             >
               ©2026
             </p>
@@ -579,7 +579,7 @@ function TabletFooterContent() {
             style={{ height: "1px", backgroundColor: FG, ...divider.style }}
           />
           <div className="flex items-center justify-between">
-            <p className="font-mono whitespace-nowrap" style={{ fontSize: ut(18), lineHeight: 1.4, color: FG }}>
+            <p className="font-mono whitespace-nowrap" style={{ fontSize: ut(14), lineHeight: 1.4, color: FG }}>
               {inView && <SplitText text={`©2026 | ${CREDIT}`} stagger={0.03} startDelay={0.7} />}
             </p>
             <div className={bottomRow.className} style={bottomRow.style}>

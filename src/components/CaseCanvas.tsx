@@ -60,8 +60,8 @@ const pieceAt = (p: number) => curtainPieceAt(BOX_AT, p);
 // The title and summary tops are measured on the design (design px); their
 // spots shift a little with the texts' length, which the blur-in absorbs.
 type IntroLayout = { height: (n: number) => number; title: number; summary: number; rowHeight: number };
-const INTRO_DESKTOP: IntroLayout = { height: () => 410, title: 213, summary: 288, rowHeight: 60 };
-const INTRO_MOBILE: IntroLayout = { height: (n) => TITLE_BOX_M + n * 48, title: 123, summary: 186, rowHeight: 48 };
+const INTRO_DESKTOP: IntroLayout = { height: () => 410, title: 213, summary: 288, rowHeight: 48 };
+const INTRO_MOBILE: IntroLayout = { height: (n) => TITLE_BOX_M + n * 40, title: 123, summary: 186, rowHeight: 40 };
 const introAt = (layout: IntroLayout, n: number) => ({
   title: pieceAt(layout.title / layout.height(n)),
   summary: pieceAt(layout.summary / layout.height(n)),
@@ -109,8 +109,9 @@ function Grid({ lines, unit }: { lines: number[]; unit: (px: number) => string }
 
 // The facts table's lines, at the grid's weight. The table reaches out over the
 // content's 10px inset to the grid strokes on either side (stopping at their
-// edge, so they stay whole), its lines running stroke to stroke; its texts
-// keep their inset.
+// edge, so they stay whole), its lines running stroke to stroke. Its texts,
+// like the title's, sit as far in from the strokes as the home's "Recent
+// work" does (20px; 10px on mobile).
 const RULE = "border-t-[1.5px] border-line";
 const reachStrokes = (unit: (px: number) => string): CSSProperties => ({
   marginInline: `calc(${GRID_STROKE / 2}px - ${unit(INSET)})`,
@@ -279,7 +280,7 @@ const moreWorksOf = (c: Case) =>
 // 24px row with the 18px label's cap height centred in it, the hairline 20px
 // under the label's baseline).
 const ROW = 24;
-const LABEL_CAP = 18 * 0.71;
+const LABEL_CAP = 14 * 0.71;
 
 function CaseDesktop({ data }: { data: Case }) {
   const works = moreWorksOf(data);
@@ -300,13 +301,16 @@ function CaseDesktop({ data }: { data: Case }) {
           <div className="relative">
             <div className="relative flex h-full items-end">
               {data.seals && <Seals seals={data.seals} unit={u} width={36} textSize={17.6} side="left" inset={20} enter={sealsEnter} />}
-              <div className="flex flex-col" style={{ padding: u(20), gap: u(20) }}>
+              {/* The summary's last line sits level with the facts table's last row
+                  (its text centred in the same 48px band), so the two columns
+                  share a base. */}
+              <div className="flex flex-col" style={{ paddingTop: u(20), paddingBottom: u((48 - 15 * 1.5) / 2), paddingInline: u(10), gap: u(20) }}>
                 <h1 className={`${DROP} font-serif leading-none text-ink`} style={{ fontSize: u(TITLE_SIZE), ...timing(introAt(INTRO_DESKTOP, data.facts.length).title) }}>
                   <ItalicI>{data.title}</ItalicI>
                 </h1>
                 <p
                   className={`${DROP} font-mono text-muted`}
-                  style={{ fontSize: u(16), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(introAt(INTRO_DESKTOP, data.facts.length).summary) }}
+                  style={{ fontSize: u(15), lineHeight: 1.5, letterSpacing: "-0.03em", ...timing(introAt(INTRO_DESKTOP, data.facts.length).summary) }}
                 >
                   <Summary text={data.summary} />
                 </p>
@@ -317,13 +321,13 @@ function CaseDesktop({ data }: { data: Case }) {
           <div className="relative">
             <dl
               className="flex h-full flex-col justify-end font-mono"
-              style={{ fontSize: u(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(u) }}
+              style={{ fontSize: u(14), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(u) }}
             >
               {data.facts.map((fact, i) => (
                 <div
                   key={fact.label}
                   className={`${DROP} flex items-center justify-between bg-canvas ${RULE} ${i === data.facts.length - 1 ? "border-b-[1.5px]" : ""}`}
-                  style={{ height: u(60), paddingInline: rowPad(u, 20), ...timing(introAt(INTRO_DESKTOP, data.facts.length).row(i)) }}
+                  style={{ height: u(48), paddingInline: rowPad(u, 10), ...timing(introAt(INTRO_DESKTOP, data.facts.length).row(i)) }}
                 >
                   <dt className="whitespace-nowrap text-muted">
                     {fact.label}
@@ -368,12 +372,12 @@ function CaseDesktop({ data }: { data: Case }) {
               <div>
                 <div
                   className="rise flex items-center justify-between text-muted"
-                  style={{ height: u(ROW), paddingInline: u(10), fontSize: u(18), lineHeight: 1.4, ...timing(0) }}
+                  style={{ height: u(ROW), paddingInline: u(10), fontSize: u(14), lineHeight: 1.4, ...timing(0) }}
                 >
                   <h2 className="whitespace-nowrap font-mono font-normal [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                     More works
                   </h2>
-                  <ArrowIcon glyph="down-right" style={{ width: u(24), height: u(24) }} />
+                  <ArrowIcon glyph="down-right" style={{ width: u(20), height: u(20) }} />
                 </div>
                 <div
                   aria-hidden
@@ -410,7 +414,7 @@ const GRID_T = [20, 410, 800];
 const COL_W_T = 370; // a "More works" card, 10px inside its strokes
 const TITLE_SIZE_TABLET = 64;
 const TITLE_BOX_T = 360; // the title box's height (at least)
-const INTRO_TABLET: IntroLayout = { height: (n) => TITLE_BOX_T + n * 60, title: 130, summary: 214, rowHeight: 60 };
+const INTRO_TABLET: IntroLayout = { height: (n) => TITLE_BOX_T + n * 48, title: 130, summary: 214, rowHeight: 48 };
 const WORK_IMAGE_T = 460;
 
 function CaseTablet({ data }: { data: Case }) {
@@ -430,7 +434,7 @@ function CaseTablet({ data }: { data: Case }) {
           <div className="relative">
             <div
               className="relative flex flex-col justify-end"
-              style={{ minHeight: ut(TITLE_BOX_T), padding: ut(20), gap: ut(20) }}
+              style={{ minHeight: ut(TITLE_BOX_T), paddingBlock: ut(20), paddingInline: ut(10), gap: ut(20) }}
             >
               {data.seals && <Seals seals={data.seals} unit={ut} width={36} textSize={17.6} side="left" inset={20} enter={sealsEnter} />}
               <h1 className={`${DROP} font-serif leading-none text-ink`} style={{ fontSize: ut(TITLE_SIZE_TABLET), ...timing(at.title) }}>
@@ -438,7 +442,7 @@ function CaseTablet({ data }: { data: Case }) {
               </h1>
               <p
                 className={`${DROP} font-mono text-muted`}
-                style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...timing(at.summary) }}
+                style={{ fontSize: ut(15), lineHeight: 1.5, letterSpacing: "-0.03em", ...timing(at.summary) }}
               >
                 <Summary text={data.summary} />
               </p>
@@ -446,13 +450,13 @@ function CaseTablet({ data }: { data: Case }) {
 
             <dl
               className="flex flex-col border-b-[1.5px] border-line font-mono"
-              style={{ fontSize: ut(18), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(ut) }}
+              style={{ fontSize: ut(14), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(ut) }}
             >
               {data.facts.map((fact, i) => (
                 <div
                   key={fact.label}
                   className={`${DROP} flex items-center justify-between bg-canvas ${RULE}`}
-                  style={{ height: ut(60), paddingInline: rowPad(ut, 20), gap: ut(20), ...timing(at.row(i)) }}
+                  style={{ height: ut(48), paddingInline: rowPad(ut, 10), gap: ut(20), ...timing(at.row(i)) }}
                 >
                   <dt className="whitespace-nowrap text-muted">{fact.label}</dt>
                   <dd className="whitespace-nowrap text-black">
@@ -490,12 +494,12 @@ function CaseTablet({ data }: { data: Case }) {
           <Reveal className="relative" style={{ marginTop: ut(160) }} rootMargin="0px 0px -20% 0px">
             <div
               className="rise flex items-center justify-between text-muted"
-              style={{ height: ut(ROW), paddingInline: ut(10), fontSize: ut(18), lineHeight: 1.4, ...timing(0) }}
+              style={{ height: ut(ROW), paddingInline: ut(10), fontSize: ut(14), lineHeight: 1.4, ...timing(0) }}
             >
               <h2 className="whitespace-nowrap font-mono font-normal [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]">
                 More works
               </h2>
-              <ArrowIcon glyph="down" style={{ width: ut(24), height: ut(24) }} />
+              <ArrowIcon glyph="down" style={{ width: ut(20), height: ut(20) }} />
             </div>
             <div
               aria-hidden
@@ -550,26 +554,26 @@ function CaseMobile({ data }: { data: Case }) {
           <div className="relative">
               <div
                 className="relative flex flex-col justify-end"
-                style={{ minHeight: um(TITLE_BOX_M), paddingBlock: um(16), paddingInline: um(10), gap: um(16) }}
+                style={{ minHeight: um(TITLE_BOX_M), paddingBlock: um(16), gap: um(16) }}
               >
                 {data.seals && <Seals seals={data.seals} unit={um} width={30} textSize={14.3} side="left" inset={10} enter={sealsEnter} />}
                 <h1 className={`${DROP} font-serif leading-none text-ink`} style={{ fontSize: um(TITLE_SIZE_MOBILE), ...timing(introAt(INTRO_MOBILE, data.facts.length).title) }}>
                   <ItalicI>{data.title}</ItalicI>
                 </h1>
-                <p className={`${DROP} font-mono text-muted`} style={{ fontSize: um(14), lineHeight: 1.4, ...timing(introAt(INTRO_MOBILE, data.facts.length).summary) }}>
+                <p className={`${DROP} font-mono text-muted`} style={{ fontSize: um(12), lineHeight: 1.5, letterSpacing: "-0.03em", ...timing(introAt(INTRO_MOBILE, data.facts.length).summary) }}>
                   <Summary text={data.summary} />
                 </p>
               </div>
 
               <dl
                 className="flex flex-col border-b-[1.5px] border-line font-mono"
-                style={{ fontSize: um(14), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(um) }}
+                style={{ fontSize: um(12), lineHeight: 1.4, letterSpacing: "-0.03em", ...reachStrokes(um) }}
               >
                 {data.facts.map((fact, i) => (
                   <div
                     key={fact.label}
                     className={`${DROP} flex items-center justify-between bg-canvas ${RULE}`}
-                    style={{ height: um(48), paddingInline: rowPad(um, 10), gap: um(16), ...timing(introAt(INTRO_MOBILE, data.facts.length).row(i)) }}
+                    style={{ height: um(40), paddingInline: rowPad(um, 0), gap: um(16), ...timing(introAt(INTRO_MOBILE, data.facts.length).row(i)) }}
                   >
                     <dt className="whitespace-nowrap text-muted">
                       {fact.label}
@@ -605,10 +609,10 @@ function CaseMobile({ data }: { data: Case }) {
             <Reveal>
               <div
                 className="rise flex items-center justify-between text-muted"
-                style={{ fontSize: um(16), lineHeight: 1.4, ...timing(0) }}
+                style={{ fontSize: um(13), lineHeight: 1.4, ...timing(0) }}
               >
                 <h2 className="whitespace-nowrap font-mono font-normal">More works</h2>
-                <ArrowIcon glyph="down" style={{ width: um(20), height: um(20) }} />
+                <ArrowIcon glyph="down" style={{ width: um(16), height: um(16) }} />
               </div>
               <div
                 aria-hidden

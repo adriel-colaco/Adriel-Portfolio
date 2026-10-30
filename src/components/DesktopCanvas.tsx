@@ -39,7 +39,7 @@ const FOLD_GAP = 10; // hairline → bottom edge of the screen (the grid's 10px 
 const HERO_LIFT = 10;
 const RECENT_GAP = 20; // "Recent work" baseline → hairline
 const RECENT_INSET = 6; // first-row top → "Recent work" cap top
-const RECENT_SIZE = 18; // "Recent work" font size
+const RECENT_SIZE = 14; // "Recent work" font size: the site's mono UI size (menu contacts, case summary and facts, footer)
 const RECENT_CAP = RECENT_SIZE * 0.71; // its height, trimmed to Geist Mono's cap height
 const HAIRLINE_TOP = `calc(100vh - ${u(FOLD_GAP)} - 1px)`;
 const ANCHOR = `calc(${HAIRLINE_TOP} - ${u(RECENT_GAP + RECENT_CAP + RECENT_INSET)})`;
@@ -250,7 +250,7 @@ export default function DesktopCanvas() {
           >
             Recent work
           </p>
-          <ArrowIcon glyph="down-right" style={{ width: u(24), height: u(24) }} />
+          <ArrowIcon glyph="down-right" style={{ width: u(20), height: u(20) }} />
         </div>
 
         {/* Hairline closing "Recent work" across the first column, 20px above

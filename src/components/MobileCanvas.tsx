@@ -198,7 +198,7 @@ export default function MobileCanvas() {
           <HeroHeading className="text-center font-serif text-ink" style={{ fontSize: u(HEADING_SIZE), lineHeight: 0.95 }} />
           <div
             className="rise shrink-0"
-            style={{ marginTop: u(24), width: u(320), height: u(52), ...introStyle("cta") }}
+            style={{ marginTop: u(24), width: u(220), height: u(52), ...introStyle("cta") }}
           >
             <HeroCTA label="Get in touch" href={WHATSAPP_URL} fontSize={u(24)} iconSize={u(22)} paddingLeft={u(22)} paddingRight={u(18)} />
           </div>
@@ -212,11 +212,11 @@ export default function MobileCanvas() {
         >
           <p
             className="whitespace-nowrap font-mono [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]"
-            style={{ fontSize: u(16), lineHeight: 1.4 }}
+            style={{ fontSize: u(13), lineHeight: 1.4 }}
           >
             Recent work
           </p>
-          <ArrowIcon glyph="down" style={{ width: u(20), height: u(20) }} />
+          <ArrowIcon glyph="down" style={{ width: u(16), height: u(16) }} />
         </div>
 
         {/* Project cards — only the first one peeks above the fold at load, so

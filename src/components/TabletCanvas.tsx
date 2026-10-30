@@ -45,7 +45,7 @@ const CARD_W = 370;
 // height centred in it, a hairline 20px under the label, the content 20px
 // under that.
 const ROW = 24;
-const LABEL_CAP = 18 * 0.71;
+const LABEL_CAP = 14 * 0.71;
 const HAIRLINE_GAP = 20 - (ROW - LABEL_CAP) / 2; // row bottom → hairline
 const TITLE_BLOCK = ROW + HAIRLINE_GAP + 1 + 20; // row top → content top
 const LABEL_CLASS =
@@ -281,10 +281,10 @@ export default function TabletCanvas() {
             className="rise flex items-center justify-between text-muted"
             style={{ height: u(ROW), paddingInline: u(20), ...introStyle("recentWork") }}
           >
-            <p className={LABEL_CLASS} style={{ fontSize: u(18), lineHeight: 1.4 }}>
+            <p className={LABEL_CLASS} style={{ fontSize: u(14), lineHeight: 1.4 }}>
               Recent work
             </p>
-            <ArrowIcon glyph="down" style={{ width: u(24), height: u(24) }} />
+            <ArrowIcon glyph="down" style={{ width: u(20), height: u(20) }} />
           </div>
           <span aria-hidden className="block bg-line" style={{ marginTop: u(HAIRLINE_GAP), height: `${GRID_STROKE}px` }} />
         </div>

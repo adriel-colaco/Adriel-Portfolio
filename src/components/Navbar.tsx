@@ -11,6 +11,7 @@ import { introStyle } from "./intro";
 import SocialIcons from "./SocialIcons";
 import BlurHoverLink from "./BlurHoverLink";
 import { useEntrance } from "./Entrance";
+import { useLiquidGlass } from "./LiquidGlass";
 import { EMAIL, EMAIL_URL, WHATSAPP_URL } from "./contact";
 
 // "Work" and "Contact" scroll the home to a section (scrollToSection): from
@@ -89,6 +90,10 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
   const enterMenu = blur && open;
   const [atFooter, setAtFooter] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  // The closed pill is liquid glass (LiquidGlass.tsx) where the browser can
+  // render it, frosted glass elsewhere.
+  const pillRef = useRef<HTMLDivElement>(null);
+  const glass = useLiquidGlass(pillRef, !open);
   const pathname = usePathname();
 
   // A section link on the home scrolls there (once the menu has let go of the
@@ -228,26 +233,32 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
           className="rise rise-from-top flex justify-center"
           style={{ ...introStyle("nav"), ...(entranceDelay !== undefined && { animationDelay: `${entranceDelay}s` }) }}
         >
+          {glass.filter}
           <div
+            ref={pillRef}
             // Both ways on the entrance curve: opening unfolds over 1s; closing
             // a little quicker, starting just after the click. The contents
             // fade out even faster, so they're all but gone while the panel's
             // soft start has barely moved — nothing gets squeezed, and the
             // close still answers straight away.
-            // Closed, it's 45% of the width, but never under 430px — the logo,
-            // the language switch and the button need that much (a portrait
-            // tablet's 45% falls short; there the header is scaled down by
-            // --nav-zoom, and the minimum with it).
-            className={`flex flex-col overflow-hidden rounded-[33px] border border-line transition-[width,height,background-color] landscape-tablet:rounded-[calc(40px*var(--nav-zoom))] ${
+            // Closed, it's a glass pill with no outline (Figma 6:100, in
+            // glass: `.glass-pill`) — no border at all, since the glass's
+            // refraction map has to line up with its edge; open, a white
+            // panel with a hairline. On desktop the closed pill
+            // is 386×70, scaled with its contents by --nav-zoom. Portrait
+            // tablets keep their 80px-tall, 45% pill (its minimum scaled down
+            // by --nav-zoom).
+            className={`flex flex-col overflow-hidden rounded-[33px] transition-[width,height,background-color] landscape-tablet:rounded-[calc(35px*var(--nav-zoom))] portrait-tablet:rounded-[calc(40px*var(--nav-zoom))] ${
               open
-                ? "h-[calc(100dvh-20px)] w-full max-w-[650px] bg-white duration-[1s] ease-(--ease-enter) landscape-tablet:h-[calc(100dvh-40px*var(--nav-zoom))] landscape-tablet:w-[97.222%] landscape-tablet:max-w-none"
-                : "h-[66px] w-full max-w-[650px] bg-canvas delay-[60ms] duration-(--dur-ui) ease-(--ease-enter) landscape-tablet:h-[calc(80px*var(--nav-zoom))] landscape-tablet:w-[max(45.139%,430px)] landscape-tablet:max-w-none portrait-tablet:w-[max(45.139%,calc(430px*var(--nav-zoom)))]"
+                ? "h-[calc(100dvh-20px)] w-full max-w-[650px] border border-line bg-white landscape-tablet:border-[1.5px] portrait-tablet:border duration-[1s] ease-(--ease-enter) landscape-tablet:h-[calc(100dvh-40px*var(--nav-zoom))] landscape-tablet:w-[97.222%] landscape-tablet:max-w-none"
+                : "glass-pill h-[66px] w-full max-w-[650px] delay-[60ms] duration-(--dur-ui) ease-(--ease-enter) landscape-tablet:h-[calc(70px*var(--nav-zoom))] landscape-tablet:w-[calc(386px*var(--nav-zoom))] landscape-tablet:max-w-none portrait-tablet:h-[calc(80px*var(--nav-zoom))] portrait-tablet:w-[max(45.139%,calc(430px*var(--nav-zoom)))]"
             }`}
+            style={glass.style}
           >
             {/* Top row: logo + toggle — zoomed with the pill on big screens
                 (--nav-zoom, globals.css), so logo, switch and button keep
                 their proportion to the page. */}
-            <div className="flex shrink-0 items-center justify-between py-[11px] pl-[20px] pr-[10px] landscape-tablet:py-[15px] landscape-tablet:pl-[25px] landscape-tablet:pr-[15px] landscape-tablet:[zoom:var(--nav-zoom)]">
+            <div className="flex shrink-0 items-center justify-between py-[11px] pl-[20px] pr-[10px] landscape-tablet:py-[10px] landscape-tablet:pl-[25px] landscape-tablet:pr-[10px] landscape-tablet:[zoom:var(--nav-zoom)] portrait-tablet:py-[15px] portrait-tablet:pr-[15px]">
               <Link href="/" className="shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -255,7 +266,7 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
                   alt="Adriel Colaço"
                   // A little smaller on phones (and smaller still on the
                   // narrowest), leaving room for the language switch beside it.
-                  className="h-[31px] w-auto shrink-0 max-[369px]:h-[29px] landscape-tablet:h-11"
+                  className="h-[31px] w-auto shrink-0 max-[369px]:h-[29px] landscape-tablet:h-[37px] portrait-tablet:h-11"
                 />
               </Link>
               <div className="flex items-center gap-3 landscape-tablet:gap-[20px]">

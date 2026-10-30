@@ -55,10 +55,9 @@ export default function TypingWord({ words, active }: { words: string[]; active:
     return () => window.clearTimeout(timer);
   }, [active, words]);
 
-  // Set in the muted grey, cursor included, so the changing word reads apart
-  // from the rest of the heading.
+  // In the heading's own blue, cursor included (the italic sets it apart).
   return (
-    <span className="text-muted">
+    <span>
       <em className="italic">{text}</em>
       <span aria-hidden className="typing-cursor" data-active={active} data-busy={busy}>
         _

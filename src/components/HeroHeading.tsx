@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import type { CSSProperties } from "react";
+import { Fragment, useLayoutEffect, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import ItalicI from "./ItalicI";
 import { SplitWord } from "./SplitText";
 import TypingWord from "./TypingWord";
@@ -16,6 +16,34 @@ import {
   HERO_WORDS,
   INTRO_EASE,
 } from "./intro";
+
+/**
+ * Holds `children` in a box that eases to their width instead of jumping to it,
+ * so when the changing word swaps for a longer or shorter one, a centred line
+ * glides to its new position rather than snapping. The content itself is never
+ * squeezed: it overflows the box while the box catches up.
+ */
+function SmoothWidth({ children }: { children: ReactNode }) {
+  const innerRef = useRef<HTMLSpanElement>(null);
+  const [width, setWidth] = useState<number>();
+  useLayoutEffect(() => {
+    const inner = innerRef.current;
+    if (!inner) return;
+    const observer = new ResizeObserver(() => setWidth(inner.offsetWidth));
+    observer.observe(inner);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <span
+      className="inline-block whitespace-nowrap transition-[width] duration-(--dur-ui) ease-(--ease-ui) motion-reduce:transition-none"
+      style={{ width }}
+    >
+      <span ref={innerRef} className="inline-block">
+        {children}
+      </span>
+    </span>
+  );
+}
 
 /**
  * The hero heading (Figma 31:66): "I design <word>" on the first line — the
@@ -55,7 +83,9 @@ export default function HeroHeading({ className, style }: { className?: string; 
           ease={INTRO_EASE}
           onAnimationEnd={(e) => e.target === e.currentTarget && setTyping(true)}
         >
-          <ChangingWord words={HERO_WORDS} active={typing} />
+          <SmoothWidth>
+            <ChangingWord words={HERO_WORDS} active={typing} />
+          </SmoothWidth>
         </SplitWord>
       </span>
       {tail.map((words, l) => (

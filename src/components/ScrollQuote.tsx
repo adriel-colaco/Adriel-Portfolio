@@ -3,8 +3,6 @@
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef } from "react";
 import { subscribe, prefersReducedMotion } from "./parallaxTicker";
-import { SplitWord } from "./SplitText";
-import { HEADING_STAGGER, INTRO_EASE } from "./intro";
 
 // Scroll window (as fractions of the viewport height) over which the letters fill.
 // Exported so the line can chain off it and start exactly when the text is done.
@@ -25,14 +23,12 @@ const mix = (t: number) =>
   )}, ${Math.round(lerp(EMPTY[2], FILL[2], t))})`;
 
 /**
- * The quote. As it comes into view its words rise in, still grey, with the
- * hero heading's move (same mask, curve, duration and stagger); then the blue
- * sweeps through it left to right, one letter after another, scrubbed by scroll
- * position. The fill is spread over most of a viewport of scrolling so its pace
- * reads as tied to the scroll rather than snapping. The rise starts as the quote
- * peeks in, just ahead of the fill's scroll window, so one hands off to the
- * other. Every "i" is set in italic (the site's flourish). Under reduced
- * motion: no rise, and the text is simply blue.
+ * The quote. It's simply there, grey (no entrance of its own); as it scrolls
+ * up the blue sweeps through it left to right, one letter after another,
+ * scrubbed by scroll position. The fill is spread over most of a viewport of
+ * scrolling so its pace reads as tied to the scroll rather than snapping. Every
+ * "i" is set in italic (the site's flourish). Under reduced motion the text is
+ * simply blue.
  *
  * A "\n" in `text` forces a line break there (each line then never wraps), for
  * when the line breaks must match the design exactly rather than depend on the
@@ -60,22 +56,6 @@ export default function ScrollQuote({
       return;
     }
 
-    // Hold the words' rise (armed = paused on its first frame, see globals.css)
-    // until the quote peeks in at the bottom of the screen — a little before
-    // the fill's start line, so the words land grey before any turns blue.
-    // Never armed without JS.
-    el.dataset.reveal = "armed";
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          el.dataset.reveal = "shown";
-          io.disconnect();
-        }
-      },
-      { threshold: 0 },
-    );
-    io.observe(el);
-
     let cur = 0;
     const unsubscribe = subscribe(() => {
       const r = el.getBoundingClientRect();
@@ -93,14 +73,8 @@ export default function ScrollQuote({
         s.style.color = mix(t);
       });
     });
-    return () => {
-      io.disconnect();
-      unsubscribe();
-    };
+    return unsubscribe;
   }, []);
-
-  // Index of each line's first word in the whole quote, for the rise stagger.
-  const lineStarts = lines.map((_, l) => lines.slice(0, l).join(" ").split(" ").filter(Boolean).length);
 
   return (
     <p ref={ref} data-scroll-quote className={className} style={style}>
@@ -110,13 +84,11 @@ export default function ScrollQuote({
           const words = line.split(" ");
           const content = words.map((word, w) => (
             <Fragment key={w}>
-              <SplitWord delay={(lineStarts[l] + w) * HEADING_STAGGER} ease={INTRO_EASE}>
-                {Array.from(word).map((char, c) => (
-                  <span key={c} data-letter style={{ color: mix(0) }}>
-                    {char === "i" || char === "í" ? <em className="italic">{char}</em> : char}
-                  </span>
-                ))}
-              </SplitWord>
+              {Array.from(word).map((char, c) => (
+                <span key={c} data-letter style={{ color: mix(0) }}>
+                  {char === "i" || char === "í" ? <em className="italic">{char}</em> : char}
+                </span>
+              ))}
               {w < words.length - 1 ? " " : null}
             </Fragment>
           ));

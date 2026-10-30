@@ -6,7 +6,6 @@ import ItalicI from "./ItalicI";
 import ParallaxImage from "./ParallaxImage";
 import ParallaxCard from "./ParallaxCard";
 import ProjectCursor from "./ProjectCursor";
-import Capabilities from "./Capabilities";
 import LinhaSection from "./LinhaSection";
 import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
@@ -24,7 +23,6 @@ import { introDelay, introStyle } from "./intro";
  * Frame width = 1440px  ->  100cqw. So 1px = (100 / 1440) cqw.
  */
 const FRAME = 1440;
-const CANVAS_BOTTOM = 4569; // end of the absolute canvas, in design px: where the Linha section begins (everything below flows). Capabilities ends at 4545, 24px above it (Figma: 20).
 const FIRST_ROW = 709; // y of the first card row, in design px (Figma node 31:19)
 
 const u = (px: number) => `${((px * 100) / FRAME).toFixed(4)}cqw`;
@@ -35,7 +33,10 @@ const u = (px: number) => `${((px * 100) / FRAME).toFixed(4)}cqw`;
 // height begins 6px below the row top). So only a sliver of cards peeks in, on
 // any screen size. Rows below still scale with width (cqw), preserving the
 // masonry.
-const FOLD_GAP = 20; // hairline → bottom edge of the screen
+const FOLD_GAP = 10; // hairline → bottom edge of the screen (the grid's 10px margin)
+// The hero stays centred where it was when the hairline sat 20px up: only what
+// comes after it (the "Recent work" row, the cards) moved down.
+const HERO_LIFT = 10;
 const RECENT_GAP = 20; // "Recent work" baseline → hairline
 const RECENT_INSET = 6; // first-row top → "Recent work" cap top
 const RECENT_SIZE = 18; // "Recent work" font size
@@ -49,8 +50,12 @@ const y = (px: number) => {
   return `calc(${ANCHOR} ${cqw < 0 ? "-" : "+"} ${Math.abs(cqw).toFixed(4)}cqw)`;
 };
 
-// Column left edges in frame coordinates (20px outer margin + 335px cols + 20px gap)
-const COL = { c1: 20, c2: 375, c3: 730, c4: 1085 } as const;
+// The background grid (Figma "Background Grid"): single 1.5px strokes 20px in
+// from the frame's edges and between the columns. LinhaSection carries them
+// on below the canvas — the middle one only down to the portrait, so it never
+// runs through the quote.
+const GRID_LINES = [20, 365, 720, 1075, 1420];
+const GRID_STROKE = 1.5;
 
 type Card = {
   name: string;
@@ -70,31 +75,32 @@ type Card = {
 };
 
 // Each row pairs a large card with a small one aligned to its top; the small
-// one drifts further down as the row scrolls through (see ParallaxCard).
+// one drifts further down as the row scrolls through (see ParallaxCard). Every
+// card sits 10px inside the grid strokes on either side of it.
 const ALL_CARDS: Card[] = [
-  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], left: COL.c3, top: 709, width: 690, imageHeight: 620, speed: 0.04, href: "/cases/tcl-semp" },
-  { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], left: COL.c2, top: 709, width: 335, imageHeight: 448, speed: 0.14, href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: COL.c1, top: 1577, width: 690, imageHeight: 620, speed: 0.035, href: "/cases/holly-bakehouse" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: COL.c4, top: 1577, width: 335, imageHeight: 448, speed: 0.13, href: "/cases/remapp" },
-  { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], left: COL.c3, top: 2445, width: 690, imageHeight: 620, speed: 0.045 },
-  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: COL.c1, top: 2445, width: 335, imageHeight: 448, objectPosition: "center bottom", speed: 0.14 },
-  { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], left: COL.c1, top: 3313, width: 690, imageHeight: 620, objectPosition: "center top", speed: 0.04 },
-  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], left: COL.c3, top: 3313, width: 335, imageHeight: 448, objectPosition: "center top", speed: 0.13 },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], left: 375, top: 709, width: 690, imageHeight: 620, speed: 0.04, href: "/cases/tcl-semp" },
+  { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], left: 1085, top: 709, width: 325, imageHeight: 448, speed: 0.14, href: "/cases/onprofit", seals: ONPROFIT_SEALS },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: 30, top: 1577, width: 680, imageHeight: 620, speed: 0.035, href: "/cases/holly-bakehouse" },
+  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: 1085, top: 1577, width: 325, imageHeight: 448, speed: 0.13, href: "/cases/remapp" },
+  { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], left: 730, top: 2445, width: 680, imageHeight: 620, speed: 0.045 },
+  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: 30, top: 2445, width: 325, imageHeight: 448, objectPosition: "center bottom", speed: 0.14 },
+  { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], left: 30, top: 3313, width: 680, imageHeight: 620, objectPosition: "center top", speed: 0.04 },
+  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], left: 730, top: 3313, width: 335, imageHeight: 448, objectPosition: "center top", speed: 0.13 },
 ];
 
 const CARDS = ALL_CARDS.filter(isShown);
-// With rows hidden (HIDDEN_PROJECTS), everything under the cards — Capabilities
-// and the canvas's end — moves up by the hidden rows' height.
-const LAST_ROW = Math.max(...ALL_CARDS.map((card) => card.top));
-const LIFT = LAST_ROW - Math.max(...CARDS.map((card) => card.top));
+// The canvas ends at the bottom of the last row still shown (HIDDEN_PROJECTS
+// leave theirs out): a large card's image plus its 12px gap and 36px name. The
+// Linha section starts right there, its portrait 200px below.
+const CANVAS_BOTTOM = Math.max(...CARDS.map((card) => card.top)) + 620 + 12 + 36;
 
 // Only the first row is on screen at load, so only it takes part in the hero
 // entrance — left to right, like the rest of the cascade.
-// The hero heading: 96px on the 1440 frame, scaling with the width — but no
+// The hero heading: 90px on the 1440 frame, centred over columns 2–3, scaling with the width — but no
 // bigger than it would be on a 16:9 screen of the same height, so on
 // ultra-wide screens (where the width outgrows the height) it stops growing
 // instead of filling the two middle columns. 16:9 and taller: unchanged.
-const HERO_SIZE = `min(${u(96)}, ${((96 / FRAME) * 100 * (16 / 9)).toFixed(4)}vh)`;
+const HERO_SIZE = `min(${u(90)}, ${((90 / FRAME) * 100 * (16 / 9)).toFixed(4)}vh)`;
 
 // How long after its card starts entering a card's seals drop in.
 const SEALS_LAG = 0.4;
@@ -108,13 +114,13 @@ const COLUMN_WIDTH = 335;
 // level with the last row's large image — so it hangs off that card and rides
 // its parallax, staying aligned however far the card has drifted.
 const LAST_LARGE_CARD = CARDS.reduce((last, card) => (card.width > COLUMN_WIDTH && card.top >= last.top ? card : last));
-const SEE_ALL = { left: COL.c4 + 20, width: 295, height: 56 };
+const SEE_ALL = { left: 1105, width: 295, height: 56 };
 
-/** A tag pill; `wip` is the blue "Work in Progress" one. */
+/** A tag (square, as in the Figma); `wip` is the blue "Work in Progress" one. */
 function Tag({ label, wip = false }: { label: string; wip?: boolean }) {
   return (
     <span
-      className={`flex items-center justify-center rounded-full font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
+      className={`flex items-center justify-center font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
       style={tagStyle(wip ? (px) => u(px * WIP_TAG_SCALE) : u, "desktop")}
     >
       {label}
@@ -144,7 +150,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
         style={introStep >= 0 ? introStyle("cards", introStep) : undefined}
       >
         <CardLink href={card.href}>
-          <div className="group relative w-full overflow-hidden" data-project-card={isWip(card) ? undefined : ""} style={{ height: u(card.imageHeight) }}>
+          <div className="group relative w-full overflow-hidden" data-project-card={isWip(card) ? "wip" : ""} style={{ height: u(card.imageHeight) }}>
             {/* Taller (large) frames drift less so the image parallax feels
                 consistent across card sizes instead of stronger on the big ones. */}
             <ParallaxImage
@@ -153,7 +159,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
               frame={{ width: card.width, height: card.imageHeight, canvas: FRAME }}
               objectPosition={card.objectPosition ?? "center"}
               travel={card.imageHeight >= 600 ? 0.05 : 0.08}
-              blur={isWip(card) ? u(16) : undefined}
+              zoom={!isWip(card)}
             />
             {/* A first-row card's seals drop in once the card is well on its way. */}
             {card.seals && (
@@ -192,33 +198,32 @@ export default function DesktopCanvas() {
   return (
     <div className="hidden w-full landscape-tablet:block portrait-tablet:hidden" style={{ containerType: "inline-size" }}>
       <ProjectCursor />
-      <div className="relative w-full" style={{ height: `calc(${ANCHOR} + ${u(CANVAS_BOTTOM - LIFT - FIRST_ROW)})` }}>
-        {/* Background grid: the 4 columns themselves, stroked full-height */}
-        {Object.values(COL).map((left) => (
+      {/* Stacked above the Linha section: the last row's cards drift down with
+          their parallax past the canvas's end, and would otherwise slip under
+          it. */}
+      <div className="relative z-[1] w-full" style={{ height: `calc(${ANCHOR} + ${u(CANVAS_BOTTOM - FIRST_ROW)})` }}>
+        {/* Background grid: one stroke per line, full height of the canvas */}
+        {GRID_LINES.map((x) => (
           <span
-            key={left}
+            key={x}
             aria-hidden
-            // Vertical-only (border-x): a top/bottom border would double up
-            // against the neighbouring section's hairline at the seam, reading
-            // as a 2px line under each column. The columns are dividers, so the
-            // Linha section's own top border caps them.
-            className="absolute top-0 bottom-0 border-x border-line"
-            style={{ left: u(left), width: u(COLUMN_WIDTH) }}
+            className="absolute top-0 bottom-0 bg-line"
+            style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
           />
         ))}
 
-        {/* Heading + CTA as one block over columns 2–3, centred vertically in
+        {/* Heading + CTA as one block over columns 2–3, centred (Figma 0:14) — vertically in
             the space between the fixed header and the first card row. */}
         <div
-          className="absolute flex flex-col justify-center"
+          className="absolute flex flex-col items-center justify-center"
           style={{
             left: u(395),
             width: u(650),
             top: "var(--header-bottom)",
-            height: `calc(${ANCHOR} - var(--header-bottom))`,
+            height: `calc(${ANCHOR} - ${u(HERO_LIFT)} - var(--header-bottom))`,
           }}
         >
-          <HeroHeading className="font-serif text-ink" style={{ fontSize: HERO_SIZE, lineHeight: 1 }} />
+          <HeroHeading className="text-center font-serif text-ink" style={{ fontSize: HERO_SIZE, lineHeight: 0.95 }} />
 
           {/* "Get in touch" CTA 40px under the heading (Figma 31:67), rising
               in after it. The wrapper carries the entrance so it never fights
@@ -231,12 +236,13 @@ export default function DesktopCanvas() {
           </div>
         </div>
 
-        {/* "Recent work ↘" in the empty first column, level with the first card
-            row (Figma 24:408 / 24:409). */}
+        {/* "Recent work ↘" across the empty first column, 20px in from its grid
+            strokes on both sides, level with the first card row (Figma 24:408 /
+            24:409). */}
         <div
           data-anchor="work"
           className="rise absolute flex items-start justify-between text-muted"
-          style={{ left: u(40), top: y(FIRST_ROW), width: u(295), ...introStyle("recentWork") }}
+          style={{ left: u(GRID_LINES[0] + 20), top: y(FIRST_ROW), width: u(GRID_LINES[1] - GRID_LINES[0] - 40), ...introStyle("recentWork") }}
         >
           <p
             className="whitespace-nowrap font-mono [text-box-edge:cap_alphabetic] [text-box-trim:trim-both]"
@@ -253,7 +259,7 @@ export default function DesktopCanvas() {
         <span
           aria-hidden
           className="absolute bg-line"
-          style={{ left: u(COL.c1), width: u(COLUMN_WIDTH), top: HAIRLINE_TOP, height: 1 }}
+          style={{ left: u(GRID_LINES[0]), width: u(GRID_LINES[1] - GRID_LINES[0]), top: HAIRLINE_TOP, height: `${GRID_STROKE}px` }}
         />
 
         {/* Project cards; "See all projects" hangs off the last row's large card */}
@@ -275,7 +281,6 @@ export default function DesktopCanvas() {
           </ProjectCard>
         ))}
 
-        <Capabilities style={{ top: y(4181 - LIFT) }} />
       </div>
 
       {/* The Linha section flows below the canvas (the footer reveal chains off

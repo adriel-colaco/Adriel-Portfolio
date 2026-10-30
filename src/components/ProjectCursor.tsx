@@ -1,28 +1,64 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 import { prefersReducedMotion, subscribe } from "./parallaxTicker";
 
-// The ring: the label three times around the circle, with a "•" between each.
-// Every word and every bullet is placed on its own at an exact third of the
-// circumference — words centred in their thirds, bullets on the boundaries — so
+// The ring: the label repeated around the circle, with a "•" between each.
+// Every word and every bullet is placed on its own at an exact fraction of the
+// circumference — words centred in their slices, bullets on the boundaries — so
 // the gaps come out identical all the way round, including where the loop
 // closes (one long string laid on the circle would end with a different gap at
-// its seam). Rendered uppercase via CSS.
-const RING_LABEL = "Abrir case";
-const RING_COUNT = 3;
+// its seam). Rendered uppercase via CSS. A case card reads "Abrir case" three
+// times; a work-in-progress card, with its longer label, twice.
 const RING_R = 40; // in the 100×100 viewBox
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_R;
-const RING_STEP = RING_CIRCUMFERENCE / RING_COUNT;
-const RING_WORD_LENGTH = 62; // each label's length along the ring, in viewBox units
+const RINGS = {
+  case: { label: "Abrir case", count: 3, wordLength: 62 }, // wordLength: along the ring, in viewBox units
+  wip: { label: "Work in progress", count: 2, wordLength: 100 },
+} as const;
 // The circle traced twice, so the last bullet (at a full turn) still sits on the path.
 const RING_PATH = `M 50,50 m -${RING_R},0 ${`a ${RING_R},${RING_R} 0 1,1 ${2 * RING_R},0 a ${RING_R},${RING_R} 0 1,1 -${2 * RING_R},0 `.repeat(2)}`;
 const SIZE = 132; // badge box, px
 
-/** One badge (ring of text + ink disc + arrow). `back` is the colour-swapped
- *  copy that shows outside the card (blue letters/arrow on a light disc). */
+/** The ring's text for one variant: its label `count` times, bullets between. */
+function RingText({ variant, pathId, fill }: { variant: keyof typeof RINGS; pathId: string; fill: string }) {
+  const { label, count, wordLength } = RINGS[variant];
+  const step = RING_CIRCUMFERENCE / count;
+  return (
+    <g className={`cursor-ring-spin cursor-variant-${variant}`}>
+      <text className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em]" fill={fill} textAnchor="middle">
+        {Array.from({ length: count }, (_, i) => (
+          <textPath
+            key={`word-${i}`}
+            href={`#${pathId}`}
+            startOffset={(i + 0.5) * step}
+            textLength={wordLength}
+            lengthAdjust="spacing"
+          >
+            {label}
+          </textPath>
+        ))}
+        {Array.from({ length: count }, (_, i) => (
+          <textPath key={`dot-${i}`} href={`#${pathId}`} startOffset={(i + 1) * step}>
+            •
+          </textPath>
+        ))}
+      </text>
+    </g>
+  );
+}
+
+/** One badge (ring of text + ink disc + icon). `back` is the colour-swapped
+ *  copy that shows outside the card (blue letters/icon on a light disc). Both
+ *  variants are drawn; the cursor's `is-wip` class picks which one shows. The
+ *  work-in-progress disc inverts the case one: white inside the card, blue
+ *  outside, its hourglass the other colour. */
 function Badge({ back }: { back?: boolean }) {
   const id = back ? "project-cursor-ring-back" : "project-cursor-ring";
+  const fill = back ? "#001fff" : "#ffffff";
+  const stroke = back ? "#001fff" : "white";
+  const wipStroke = back ? "white" : "#001fff";
   return (
     <>
       <svg
@@ -32,45 +68,38 @@ function Badge({ back }: { back?: boolean }) {
         <defs>
           <path id={id} d={RING_PATH} fill="none" />
         </defs>
-        <g className="cursor-ring-spin">
-          <text
-            className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em]"
-            fill={back ? "#001fff" : "#D4D4D8"}
-            textAnchor="middle"
-          >
-            {Array.from({ length: RING_COUNT }, (_, i) => (
-              <textPath
-                key={`word-${i}`}
-                href={`#${id}`}
-                startOffset={(i + 0.5) * RING_STEP}
-                textLength={RING_WORD_LENGTH}
-                lengthAdjust="spacing"
-              >
-                {RING_LABEL}
-              </textPath>
-            ))}
-            {Array.from({ length: RING_COUNT }, (_, i) => (
-              <textPath key={`dot-${i}`} href={`#${id}`} startOffset={(i + 1) * RING_STEP}>
-                •
-              </textPath>
-            ))}
-          </text>
-        </g>
+        <RingText variant="case" pathId={id} fill={fill} />
+        <RingText variant="wip" pathId={id} fill={fill} />
       </svg>
 
       <div
         className="cursor-disc flex h-[72px] w-[72px] items-center justify-center rounded-full"
-        style={{ backgroundColor: back ? "#ffffff" : "#001fff" }}
+        style={{ "--disc": back ? "#ffffff" : "#001fff", "--disc-wip": back ? "#001fff" : "#ffffff" } as CSSProperties}
       >
-        <svg viewBox="0 0 44 44" className="cursor-arrow h-[40px] w-[40px]">
+        <svg viewBox="0 0 44 44" className="cursor-arrow cursor-variant-case h-[40px] w-[40px]">
           <path
             d="M27.9706 27.6568V16.3431H16.6569M27.9706 16.3431L16.6569 27.6568"
-            stroke={back ? "#001fff" : "white"}
+            stroke={stroke}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
             fill="none"
           />
+        </svg>
+        {/* Work in progress: an hourglass whose sand runs down, then flips. */}
+        <svg viewBox="0 0 44 44" className="cursor-arrow cursor-variant-wip h-[40px] w-[40px]">
+          <g className="cursor-hourglass">
+            <path
+              d="M15 12H29M15 32H29M16 12V15.5C16 18.1 18.2 20.1 22 22C25.8 20.1 28 18.1 28 15.5V12M16 32V28.5C16 25.9 18.2 23.9 22 22C25.8 23.9 28 25.9 28 28.5V32"
+              stroke={wipStroke}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <path className="cursor-sand-top" d="M18.6 15.5H25.4C24.8 17 23.6 18.2 22 19.2C20.4 18.2 19.2 17 18.6 15.5Z" fill={wipStroke} />
+            <path className="cursor-sand-bottom" d="M18.4 30.5C19 28.4 20.3 27.1 22 26.2C23.7 27.1 25 28.4 25.6 30.5Z" fill={wipStroke} />
+          </g>
         </svg>
       </div>
     </>
@@ -84,7 +113,7 @@ function Badge({ back }: { back?: boolean }) {
  * tooltip the badge would cover), where it stays a dot.
  *
  * Two stacked copies make the badge look like it's clipped by the card edge:
- * the FRONT copy (ink disc, white arrow, grey ring) is clipped to the part of
+ * the FRONT copy (ink disc, white arrow, white ring) is clipped to the part of
  * the badge that overlaps the hovered card, and the BACK copy (colour-swapped —
  * blue letters/arrow) is clipped to everything OUTSIDE the card. Together they
  * read as one badge whose colours invert as it crosses the card's edge.
@@ -245,6 +274,8 @@ export default function ProjectCursor() {
     };
     const onEnterCard = (e: Event) => {
       hoverCard = e.currentTarget as HTMLElement;
+      // Set on enter only, so the badge keeps its label while it shrinks away.
+      el.classList.toggle("is-wip", hoverCard.dataset.projectCard === "wip");
       syncHover();
       updateClips();
     };

@@ -1,12 +1,11 @@
 import ScrollQuote from "./ScrollQuote";
 import ScrollLine from "./ScrollLine";
-import PortraitReveal from "./PortraitReveal";
+import Portrait from "./Portrait";
 
 /**
- * The "Linha" section (Figma nodes 31:95–31:99): a bordered container holding
- * a small black-and-white portrait, the scroll-filled quote, and the hand-drawn
- * line beneath it. It flows right after the DesktopCanvas (Capabilities sits
- * 20px above it). Dimensions are `cqw` (100cqw = the 1440px frame), matching
+ * The "Linha" section (Figma nodes 31:95–31:99): a container holding a small
+ * black-and-white portrait, the scroll-filled quote, and the hand-drawn line
+ * beneath it. It flows right after the DesktopCanvas's last card row. Dimensions are `cqw` (100cqw = the 1440px frame), matching
  * the rest of the DesktopCanvas.
  */
 const FRAME = 1440;
@@ -27,18 +26,41 @@ const EXTRA = QUOTE_SIZE * QUOTE_LINES * (QUOTE_LEADING - 0.9);
 const LINE_H = (944 * 739) / 842;
 const LINE_EXTRA = LINE_H - 739;
 
+// Grid strokes in the section's 1400px box, which starts at the frame's x = 20
+// (the frame's 20, 365, 1075, 1420).
+const GRID_LINES = [0, 345, 1055, 1400];
+const GRID_STROKE = 1.5;
+const PORTRAIT_TOP = 200;
+
 export default function LinhaSection() {
   return (
     <div
-      // Its top border also caps the canvas's column strokes, which stop here.
       data-linha
-      className="relative border border-line bg-canvas"
+      // No background of its own: the cards above drift into its top.
+      className="relative"
       style={{ width: u(1400), height: u(1324 + EXTRA + LINE_EXTRA), marginInline: "auto" }}
     >
-      {/* Portrait (Rectangle 6) — centred above the quote, wiped in top→bottom */}
-      <PortraitReveal
+      {/* The home's background grid carries on through the section. */}
+      {GRID_LINES.map((x) => (
+        <span
+          key={x}
+          aria-hidden
+          className="absolute top-0 bottom-0 bg-line"
+          style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
+        />
+      ))}
+      {/* The middle stroke runs on down to the portrait and stops there (Figma),
+          clear of the quote. */}
+      <span
+        aria-hidden
+        className="absolute top-0 bg-line"
+        style={{ left: `calc(${u(700)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px`, height: u(PORTRAIT_TOP) }}
+      />
+
+      {/* Portrait (Rectangle 6) — centred above the quote */}
+      <Portrait
         className="absolute left-1/2 -translate-x-1/2 overflow-hidden"
-        style={{ top: u(200), width: u(140), height: u(140) }}
+        style={{ top: u(PORTRAIT_TOP), width: u(140), height: u(140) }}
       />
 
       {/* Quote + decorative line — both scrub on scroll: the quote fills
@@ -58,7 +80,7 @@ export default function LinhaSection() {
         }}
       />
       <ScrollLine
-        className="line-enter absolute"
+        className="absolute"
         style={{ left: u(228), top: u(585 + EXTRA), width: u(944), height: u(LINE_H) }}
       />
     </div>

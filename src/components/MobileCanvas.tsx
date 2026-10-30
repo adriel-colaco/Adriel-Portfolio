@@ -8,7 +8,6 @@ import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
 import { WHATSAPP_URL } from "./contact";
 import ArrowIcon from "./ArrowIcon";
-import CapabilitiesMobile from "./CapabilitiesMobile";
 import LinhaSectionMobile from "./LinhaSectionMobile";
 import { introStyle } from "./intro";
 import Reveal from "./Reveal";
@@ -25,9 +24,11 @@ import Reveal from "./Reveal";
 const FRAME = 360;
 const u = (px: number) => `${((px * 100) / FRAME).toFixed(4)}cqw`;
 
-// 4-column grid: 10px outer margin, 77.5px columns, 10px gutters.
-const COLS = [10, 97.5, 185, 272.5];
-const COL_W = 77.5;
+// 4-column grid: 10px outer margin, 77.5px columns, 10px gutters. Drawn as on
+// desktop: single 1.5px strokes at the margins and down the middle of each
+// gutter, the cards 10px inside them.
+const GRID_LINES = [10, 92.5, 180, 267.5, 350];
+const GRID_STROKE = 1.5;
 
 // The hero fills the first screen, like desktop: the first card is pinned so
 // its top PEEK px show at the bottom of the screen, "Recent work ↓" sits just
@@ -72,14 +73,14 @@ type MCard = {
 // Same eight projects as desktop, in the Figma mobile order: full-width "large"
 // cards alternating with smaller cards nudged left/right.
 const ALL_CARDS: MCard[] = [
-  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], x: 10, y: 732, w: 340, imageHeight: 328, objectPosition: "center", href: "/cases/tcl-semp" },
-  { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], x: 97.5, y: 1204, w: 252.5, imageHeight: 270, objectPosition: "center", href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], x: 10, y: 1618, w: 340, imageHeight: 328, objectPosition: "center", href: "/cases/holly-bakehouse" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], x: 10, y: 2090, w: 252.5, imageHeight: 270, objectPosition: "center", href: "/cases/remapp" },
-  { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], x: 10, y: 2504, w: 340, imageHeight: 328, objectPosition: "center" },
-  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], x: 97.5, y: 2976, w: 252.5, imageHeight: 270, objectPosition: "center bottom" },
-  { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], x: 10, y: 3390, w: 340, imageHeight: 328, objectPosition: "center top" },
-  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], x: 10, y: 3862, w: 252.5, imageHeight: 270, objectPosition: "center" },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], x: 20, y: 732, w: 320, imageHeight: 328, objectPosition: "center", href: "/cases/tcl-semp" },
+  { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], x: 102.5, y: 1204, w: 237.5, imageHeight: 270, objectPosition: "center", href: "/cases/onprofit", seals: ONPROFIT_SEALS },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], x: 20, y: 1618, w: 320, imageHeight: 328, objectPosition: "center", href: "/cases/holly-bakehouse" },
+  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], x: 20, y: 2090, w: 237.5, imageHeight: 270, objectPosition: "center", href: "/cases/remapp" },
+  { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], x: 20, y: 2504, w: 320, imageHeight: 328, objectPosition: "center" },
+  { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], x: 102.5, y: 2976, w: 237.5, imageHeight: 270, objectPosition: "center bottom" },
+  { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], x: 20, y: 3390, w: 320, imageHeight: 328, objectPosition: "center top" },
+  { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], x: 20, y: 3862, w: 237.5, imageHeight: 270, objectPosition: "center" },
 ];
 
 // Projects hidden for now (HIDDEN_PROJECTS) are left out, and Capabilities
@@ -88,11 +89,11 @@ const CARDS = ALL_CARDS.filter(isShown);
 const LAST_CARD_END = Math.max(...CARDS.map((card) => card.y + card.imageHeight)) + 12 + 32;
 const CARDS_END = (SHOW_SEE_ALL ? SEE_ALL_TOP + SEE_ALL_HEIGHT : LAST_CARD_END) + 100;
 
-/** A tag pill; `wip` is the blue "Work in Progress" one. */
+/** A tag (square, as in the Figma); `wip` is the blue "Work in Progress" one. */
 function Tag({ label, wip = false }: { label: string; wip?: boolean }) {
   return (
     <span
-      className={`flex items-center justify-center rounded-full font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
+      className={`flex items-center justify-center font-mono leading-none ${wip ? "bg-ink text-white" : "bg-white text-ink"}`}
       style={tagStyle(wip ? (px) => u(px * WIP_TAG_SCALE) : u, "mobile")}
     >
       {label}
@@ -136,7 +137,7 @@ function ProjectCard({ card, entrance }: { card: MCard; entrance: boolean }) {
             frame={{ width: card.w, height: card.imageHeight, canvas: FRAME }}
             objectPosition={card.objectPosition ?? "center"}
             travel={card.imageHeight >= 300 ? 0.06 : 0.08}
-            blur={isWip(card) ? u(10) : undefined}
+            zoom={!isWip(card)}
           />
           {/* The seals drop in as the card scrolls into view (the frame-sized
               Reveal is what's observed; the ribbons move inside it). */}
@@ -169,25 +170,24 @@ export default function MobileCanvas() {
           column strokes run the full height, down to the Linha section's top
           border, which caps them. */}
       <div className="relative w-full" style={{ paddingBottom: u(20) }}>
-        {/* Background grid: 4 columns, 10px margin + gutters */}
-        {COLS.map((left) => (
+        {/* Background grid: one stroke per line, full height of the canvas */}
+        {GRID_LINES.map((x) => (
           <span
-            key={left}
+            key={x}
             aria-hidden
-            // Vertical-only (border-x): a top/bottom border would double against
-            // the Linha section's hairline at the seam, reading as 2px.
-            className="absolute top-0 bottom-0 border-x border-line"
-            style={{ left: u(left), width: u(COL_W) }}
+            className="absolute top-0 bottom-0 bg-line"
+            style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
           />
         ))}
 
         {/* Holds the height of the absolutely placed hero and cards. */}
         <div aria-hidden style={{ height: y(CARDS_END) }} />
 
-        {/* Heading + CTA as one block, centred vertically between the fixed
-            header and "Recent work". Same copy and typed word as desktop. */}
+        {/* Heading + CTA as one block, centred — across the page, as on
+            desktop, and between the fixed header and "Recent work". Same copy
+            and typed word as desktop. */}
         <div
-          className="absolute flex flex-col justify-center"
+          className="absolute flex flex-col items-center justify-center"
           style={{
             left: u(20),
             width: u(320),
@@ -195,7 +195,7 @@ export default function MobileCanvas() {
             height: `calc(${y(RECENT_WORK)} - var(--header-bottom))`,
           }}
         >
-          <HeroHeading className="font-serif text-ink" style={{ fontSize: u(HEADING_SIZE), lineHeight: 1 }} />
+          <HeroHeading className="text-center font-serif text-ink" style={{ fontSize: u(HEADING_SIZE), lineHeight: 0.95 }} />
           <div
             className="rise shrink-0"
             style={{ marginTop: u(24), width: u(320), height: u(52), ...introStyle("cta") }}
@@ -235,7 +235,6 @@ export default function MobileCanvas() {
           </div>
         )}
 
-        <CapabilitiesMobile />
       </div>
 
       <LinhaSectionMobile />

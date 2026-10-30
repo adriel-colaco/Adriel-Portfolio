@@ -39,7 +39,7 @@ export default function BlurWord({ words, active }: { words: string[]; active: b
   };
 
   return (
-    <span className="text-muted">
+    <span>
       <em className="italic">
         <BlurLetters text={words[index]} phase={phase} onDone={onDone} />
       </em>

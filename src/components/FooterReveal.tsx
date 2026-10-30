@@ -7,7 +7,6 @@ import { QUOTE_START, QUOTE_SPAN } from "./ScrollQuote";
 import { LINE_SPAN_FACTOR } from "./ScrollLine";
 import SplitText from "./SplitText";
 import { INTRO_DURATION, INTRO_EASE } from "./intro";
-import { useMagnetPull } from "./useMagnetPull";
 import { useEntrance } from "./Entrance";
 import SocialIcons from "./SocialIcons";
 import { EMAIL_URL, WHATSAPP_URL, externalProps } from "./contact";
@@ -35,7 +34,7 @@ const MASCOT_SCALE = 1.2;
 // this deep (in viewport heights) where the blue thins out into the page, on
 // the same eased stops as the loader curtain's tail. Its alpha at each step
 // through the feather, from the solid inside out to the edge:
-const FEATHER = 0.2;
+const FEATHER = 0.4;
 const FEATHER_STOPS = [
   [0, 1],
   [0.12, 0.91],
@@ -57,9 +56,11 @@ function softCircle(r: number, feather: number) {
   return `radial-gradient(circle ${Math.max(r, 0.1).toFixed(1)}px at 50% 0%, ${stops})`;
 }
 
-// The site's 4-column background grid (same values as DesktopCanvas): so the
-// footer continues that grid behind it, and the blue circle floods in over the
-// grid instead of over blank canvas.
+// The site's background grid (same strokes as DesktopCanvas, the middle one
+// picking up again here after stopping at the Linha's portrait), capped by a
+// stroke across the footer's top (Figma): so the footer continues that grid
+// behind it, and the blue circle floods in over the grid instead of over blank
+// canvas.
 const FRAME = 1440;
 const u = (px: number) => `${((px * 100) / FRAME).toFixed(4)}cqw`;
 // The desktop mascot's size by the screen's height instead: what it would be
@@ -68,21 +69,19 @@ const u = (px: number) => `${((px * 100) / FRAME).toFixed(4)}cqw`;
 // screens leave the width-based size looking small (.footer-mascot,
 // globals.css).
 const byHeight = (px: number) => `${((px * 100 * 16) / (FRAME * 9)).toFixed(4)}vh`;
-const COLUMNS = [20, 375, 730, 1085];
-const COLUMN_WIDTH = 335;
+const GRID_LINES = [20, 365, 720, 1075, 1420];
+const GRID_STROKE = 1.5;
 
-// Mobile scale (360px design frame) + its 4-column grid, mirroring MobileCanvas,
+// Mobile scale (360px design frame) + its grid strokes, mirroring MobileCanvas,
 // so the footer continues the same grid on phones.
 const FRAME_M = 360;
 const um = (px: number) => `${((px * 100) / FRAME_M).toFixed(4)}cqw`;
-const COLUMNS_M = [10, 97.5, 185, 272.5];
-const COLUMN_WIDTH_M = 77.5;
+const GRID_LINES_M = [10, 92.5, 180, 267.5, 350];
 
-// Portrait-tablet scale (820px frame) + its 2-column grid, mirroring TabletCanvas.
+// Portrait-tablet scale (820px frame) + its grid strokes, mirroring TabletCanvas.
 const FRAME_T = 820;
 const ut = (px: number) => `${((px * 100) / FRAME_T).toFixed(4)}cqw`;
-const COLUMNS_T = [20, 420];
-const COLUMN_WIDTH_T = 380;
+const GRID_LINES_T = [20, 410, 800];
 // The tablet's mascot and "Let's talk?" a size up from the desktop's, to hold
 // the tall screen: the title then spans most of the width.
 const MASCOT_SCALE_T = 1.45;
@@ -200,30 +199,31 @@ export default function FooterReveal() {
       {/* Background grid: the site's 4 columns, continued behind the footer so
           the blue circle floods in over the grid rather than blank canvas.
           Desktop columns on wide screens, the mobile grid on phones. */}
-      {COLUMNS.map((left) => (
+      {GRID_LINES.map((x) => (
         <span
-          key={left}
+          key={x}
           aria-hidden
-          className="absolute top-0 bottom-0 hidden border-x border-line landscape-tablet:block portrait-tablet:hidden"
-          style={{ left: u(left), width: u(COLUMN_WIDTH) }}
+          className="absolute top-0 bottom-0 hidden bg-line landscape-tablet:block portrait-tablet:hidden"
+          style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
         />
       ))}
-      {COLUMNS_T.map((left) => (
+      {GRID_LINES_T.map((x) => (
         <span
-          key={`t-${left}`}
+          key={`t-${x}`}
           aria-hidden
-          className="absolute top-0 bottom-0 hidden border-x border-line portrait-tablet:block"
-          style={{ left: ut(left), width: ut(COLUMN_WIDTH_T) }}
+          className="absolute top-0 bottom-0 hidden bg-line portrait-tablet:block"
+          style={{ left: `calc(${ut(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
         />
       ))}
-      {COLUMNS_M.map((left) => (
+      {GRID_LINES_M.map((x) => (
         <span
-          key={`m-${left}`}
+          key={`m-${x}`}
           aria-hidden
-          className="absolute top-0 bottom-0 border-x border-line landscape-tablet:hidden"
-          style={{ left: um(left), width: um(COLUMN_WIDTH_M) }}
+          className="absolute top-0 bottom-0 bg-line landscape-tablet:hidden"
+          style={{ left: `calc(${um(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
         />
       ))}
+      <span aria-hidden className="absolute inset-x-0 top-0 bg-line" style={{ height: `${GRID_STROKE}px` }} />
 
       {/* Blue fill, clipped to the growing circle (desktop). The footer content
           lives inside it so it's revealed together with the flood. */}
@@ -370,11 +370,12 @@ function FooterContent() {
         </div>
       </div>
 
-      {/* Divider (Vector 1) — full-width hairline, drawn in from the left. */}
+      {/* Divider (Figma 6:81) — a hairline inside the content's 40px margins
+          (41 → 1399), drawn in from the left. */}
       <div
         aria-hidden
-        className={`absolute left-0 right-0 ${divider.className}`}
-        style={{ top: u(668), height: "1px", backgroundColor: FG, ...divider.style }}
+        className={`absolute ${divider.className}`}
+        style={{ left: u(41), width: u(1358), top: u(668), height: "1px", backgroundColor: FG, ...divider.style }}
       />
 
       {/* ©2026 | credit */}
@@ -469,12 +470,11 @@ function MobileFooterContent() {
         </div>
 
         <div className="flex flex-col" style={{ gap: um(16) }}>
-          {/* Full-bleed: pulled out past the content's side padding so it runs
-              edge to edge of the screen. */}
+          {/* Inside the content's side padding, as on desktop. */}
           <div
             aria-hidden
             className={divider.className}
-            style={{ height: "1px", marginInline: `calc(-1 * ${um(20)})`, backgroundColor: FG, ...divider.style }}
+            style={{ height: "1px", backgroundColor: FG, ...divider.style }}
           />
           <div className="flex items-center justify-between">
             <p
@@ -572,11 +572,11 @@ function TabletFooterContent() {
         </div>
 
         <div className="flex flex-col" style={{ gap: ut(30) }}>
-          {/* Full-bleed: pulled out past the side padding, edge to edge. */}
+          {/* Inside the side padding, as on desktop. */}
           <div
             aria-hidden
             className={divider.className}
-            style={{ height: "1px", marginInline: `calc(-1 * ${ut(40)})`, backgroundColor: FG, ...divider.style }}
+            style={{ height: "1px", backgroundColor: FG, ...divider.style }}
           />
           <div className="flex items-center justify-between">
             <p className="font-mono whitespace-nowrap" style={{ fontSize: ut(18), lineHeight: 1.4, color: FG }}>
@@ -604,20 +604,16 @@ function TabletPill({
   children: ReactNode;
   enter: Entrance;
 }) {
-  const ref = useRef<HTMLAnchorElement>(null);
-  const contentRef = useRef<HTMLSpanElement>(null);
-  useMagnetPull(ref, contentRef);
 
   return (
     <a
-      ref={ref}
       href={href}
       {...externalProps(href)}
       data-cursor-magnet
       className={`footer-pill flex h-full flex-1 items-center justify-center rounded-full border font-serif will-change-transform ${enter.className}`}
       style={enter.style}
     >
-      <span ref={contentRef} className="flex items-center" style={{ gap: ut(20) }}>
+      <span className="flex items-center" style={{ gap: ut(20) }}>
         <span className="whitespace-nowrap" style={{ fontSize: ut(45), lineHeight: 1 }}>
           {label}
         </span>
@@ -677,16 +673,12 @@ function ContactPill({
   children: ReactNode;
   enter: Entrance;
 }) {
-  const ref = useRef<HTMLAnchorElement>(null);
-  const contentRef = useRef<HTMLSpanElement>(null);
-  useMagnetPull(ref, contentRef);
 
+  // `footer-pill` (globals.css) does the hover/cursor-magnet colour swap; the
+  // icon uses currentColor so text + icon flip to blue together. `data-cursor-
+  // magnet` makes the trailing dot magnet into it, like the menu button.
   return (
-    // `footer-pill` (globals.css) does the hover/cursor-magnet colour swap; the
-    // icon uses currentColor so text + icon flip to blue together. `data-cursor-
-    // magnet` makes the trailing dot magnet into it, like the menu button.
     <a
-      ref={ref}
       href={href}
       {...externalProps(href)}
       data-cursor-magnet
@@ -695,8 +687,7 @@ function ContactPill({
       className={`footer-pill flex h-full flex-1 items-center justify-center rounded-full border font-serif will-change-transform ${enter.className}`}
       style={{ paddingLeft: u(10), paddingBlock: u(36), ...enter.style }}
     >
-      {/* Label and icon are pulled separately (useMagnetPull), by how close the cursor is to each. */}
-      <span ref={contentRef} className="flex items-center" style={{ gap: u(20) }}>
+      <span className="flex items-center" style={{ gap: u(20) }}>
         <span className="whitespace-nowrap" style={{ fontSize: u(42), lineHeight: 1 }}>
           {label}
         </span>

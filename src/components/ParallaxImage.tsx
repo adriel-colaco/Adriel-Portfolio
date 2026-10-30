@@ -31,8 +31,8 @@ type ParallaxImageProps = {
   objectPosition?: string;
   /** Max vertical travel as a fraction of the frame height (must stay < 9%). */
   travel?: number;
-  /** Blurs the cover (a CSS length) and drops its hover zoom: a work-in-progress card. */
-  blur?: string;
+  /** Zooms in on hover; off for a work-in-progress card, which links nowhere. */
+  zoom?: boolean;
 };
 
 /**
@@ -50,7 +50,7 @@ export default function ParallaxImage({
   frame,
   objectPosition = "center",
   travel = 0.08,
-  blur,
+  zoom = true,
 }: ParallaxImageProps) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -90,8 +90,8 @@ export default function ParallaxImage({
         fill
         sizes={coverSizes(src, frame)}
         quality={COVER_QUALITY}
-        className={blur ? "object-cover" : "object-cover transition-transform duration-(--dur-ui) ease-(--ease-ui) group-hover:scale-[1.06]"}
-        style={{ objectPosition, filter: blur ? `blur(${blur})` : undefined }}
+        className={zoom ? "object-cover transition-transform duration-(--dur-ui) ease-(--ease-ui) group-hover:scale-[1.06]" : "object-cover"}
+        style={{ objectPosition }}
       />
     </div>
   );

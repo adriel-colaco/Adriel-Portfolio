@@ -103,7 +103,7 @@ function Grid({ cols, width, unit }: { cols: number[]; width: number; unit: (px:
 function Tag({ label, unit, variant }: { label: string; unit: (px: number) => string; variant: TagsVariant }) {
   return (
     <span
-      className="flex items-center justify-center rounded-full bg-white font-mono leading-none text-ink"
+      className="flex items-center justify-center bg-white font-mono leading-none text-ink"
       style={tagStyle(unit, variant)}
     >
       {label}

@@ -33,12 +33,12 @@ export const PROJECTS: Project[] = [
   },
   { name: "FTD Educação", image: "/projects/ftd.jpg", tags: ["UX/UI"], objectPosition: "center top" },
   { name: "Heineken", image: "/projects/heineken.jpg", tags: ["UX/UI"] },
-  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], href: "/cases/tcl-semp" },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v4.webp", tags: ["UX/UI"], href: "/cases/tcl-semp" },
   { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], objectPosition: "center bottom" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"] },
   { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], href: "/cases/holly-bakehouse" },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], objectPosition: "center top" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], href: "/cases/remapp" },
+  { name: "Remapp", image: "/projects/remapp-cover-v4.webp", tags: ["3D", "Illustration"], href: "/cases/remapp" },
 ];
 
 // A card's tags: small mono labels on white pills — kept quiet so they read as
@@ -73,8 +73,9 @@ export function tagsBoxStyle(unit: Unit, variant: TagsVariant): CSSProperties {
 const COVER_ASPECT = 1920 / 1726;
 const COVER_ASPECTS: Record<string, number> = {
   "/projects/onprofit.webp": 1948 / 2000,
-  "/projects/tcl-semp-cover-v2.webp": 1920 / 1502,
+  "/projects/tcl-semp-cover-v4.webp": 1920 / 1502,
   "/projects/holly-bakehouse-cover-v2.webp": 1333 / 2000,
+  "/projects/remapp-cover-v4.webp": 1920 / 1502,
 };
 export const coverAspect = (src: string) => COVER_ASPECTS[src] ?? COVER_ASPECT;
 

@@ -73,10 +73,10 @@ type MCard = {
 // Same eight projects as desktop, in the Figma mobile order: full-width "large"
 // cards alternating with smaller cards nudged left/right.
 const ALL_CARDS: MCard[] = [
-  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], x: 20, y: 732, w: 320, imageHeight: 328, objectPosition: "center", href: "/cases/tcl-semp" },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v4.webp", tags: ["UX/UI"], x: 20, y: 732, w: 320, imageHeight: 328, objectPosition: "center", href: "/cases/tcl-semp" },
   { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], x: 102.5, y: 1204, w: 237.5, imageHeight: 270, objectPosition: "center", href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], x: 20, y: 1618, w: 320, imageHeight: 328, objectPosition: "center", href: "/cases/holly-bakehouse" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], x: 20, y: 2090, w: 237.5, imageHeight: 270, objectPosition: "center", href: "/cases/remapp" },
+  { name: "Remapp", image: "/projects/remapp-cover-v4.webp", tags: ["3D", "Illustration"], x: 20, y: 1618, w: 320, imageHeight: 328, objectPosition: "center", href: "/cases/remapp" },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], x: 20, y: 2090, w: 237.5, imageHeight: 270, objectPosition: "center", href: "/cases/holly-bakehouse" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], x: 20, y: 2504, w: 320, imageHeight: 328, objectPosition: "center" },
   { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], x: 102.5, y: 2976, w: 237.5, imageHeight: 270, objectPosition: "center bottom" },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], x: 20, y: 3390, w: 320, imageHeight: 328, objectPosition: "center top" },
@@ -136,7 +136,7 @@ function ProjectCard({ card, entrance }: { card: MCard; entrance: boolean }) {
             alt={card.name}
             frame={{ width: card.w, height: card.imageHeight, canvas: FRAME }}
             objectPosition={card.objectPosition ?? "center"}
-            travel={card.imageHeight >= 300 ? 0.06 : 0.08}
+            travel={card.imageHeight >= 300 ? 0.67 : 0.9}
             zoom={!isWip(card)}
           />
           {/* The seals drop in as the card scrolls into view (the frame-sized

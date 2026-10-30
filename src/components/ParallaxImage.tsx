@@ -5,7 +5,10 @@ import { useEffect, useRef } from "react";
 import { subscribe, prefersReducedMotion, LERP } from "./parallaxTicker";
 import { coverAspect } from "./projects";
 
-const SCALE = 1.18; // zoom that creates the drift head-room (9% each side)
+// Zoom that creates the drift head-room (9% each side). It spends the cover's
+// resolution, which `coverSizes` makes up for by asking for a bigger file.
+const SCALE = 1.18;
+const HEADROOM = (SCALE - 1) / 2;
 // The covers' optimised quality (allowed in next.config.ts): Next's default 75
 // left them visibly soft.
 const COVER_QUALITY = 90;
@@ -29,7 +32,7 @@ type ParallaxImageProps = {
   alt: string;
   frame: ImageFrame;
   objectPosition?: string;
-  /** Max vertical travel as a fraction of the frame height (must stay < 9%). */
+  /** How much of the zoom's head-room the drift uses, 0–1 (1 = edge to edge). */
   travel?: number;
   /** Zooms in on hover; off for a work-in-progress card, which links nowhere. */
   zoom?: boolean;
@@ -49,7 +52,7 @@ export default function ParallaxImage({
   alt,
   frame,
   objectPosition = "center",
-  travel = 0.08,
+  travel = 0.9,
   zoom = true,
 }: ParallaxImageProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -71,7 +74,7 @@ export default function ParallaxImage({
         Math.min(1, (center - vh / 2) / (vh / 2 + rect.height / 2)),
       );
       current += (target - current) * LERP;
-      const shift = current * rect.height * travel;
+      const shift = current * rect.height * HEADROOM * travel;
       wrap.style.transform = `translate3d(0, ${shift.toFixed(2)}px, 0) scale(${SCALE})`;
     };
 

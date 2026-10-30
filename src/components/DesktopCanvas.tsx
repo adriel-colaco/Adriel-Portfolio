@@ -78,10 +78,10 @@ type Card = {
 // one drifts further down as the row scrolls through (see ParallaxCard). Every
 // card sits 10px inside the grid strokes on either side of it.
 const ALL_CARDS: Card[] = [
-  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], left: 375, top: 709, width: 690, imageHeight: 620, speed: 0.04, href: "/cases/tcl-semp" },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v4.webp", tags: ["UX/UI"], left: 375, top: 709, width: 690, imageHeight: 620, speed: 0.04, href: "/cases/tcl-semp" },
   { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], left: 1085, top: 709, width: 325, imageHeight: 448, speed: 0.14, href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: 30, top: 1577, width: 680, imageHeight: 620, speed: 0.035, href: "/cases/holly-bakehouse" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: 1085, top: 1577, width: 325, imageHeight: 448, speed: 0.13, href: "/cases/remapp" },
+  { name: "Remapp", image: "/projects/remapp-cover-v4.webp", tags: ["3D", "Illustration"], left: 30, top: 1577, width: 680, imageHeight: 620, speed: 0.035, href: "/cases/remapp" },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: 1085, top: 1577, width: 325, imageHeight: 448, speed: 0.13, href: "/cases/holly-bakehouse" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], left: 730, top: 2445, width: 680, imageHeight: 620, speed: 0.045 },
   { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: 30, top: 2445, width: 325, imageHeight: 448, objectPosition: "center bottom", speed: 0.14 },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], left: 30, top: 3313, width: 680, imageHeight: 620, objectPosition: "center top", speed: 0.04 },
@@ -158,7 +158,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
               alt={card.name}
               frame={{ width: card.width, height: card.imageHeight, canvas: FRAME }}
               objectPosition={card.objectPosition ?? "center"}
-              travel={card.imageHeight >= 600 ? 0.05 : 0.08}
+              travel={card.imageHeight >= 600 ? 0.56 : 0.9}
               zoom={!isWip(card)}
             />
             {/* A first-row card's seals drop in once the card is well on its way. */}

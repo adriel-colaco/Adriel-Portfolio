@@ -85,10 +85,10 @@ const NAME_SIZE = 32;
 const ROW_PITCH = IMAGE_H + NAME_GAP + NAME_SIZE + 80;
 const row = (r: number) => r * ROW_PITCH;
 const ALL_CARDS: Card[] = [
-  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v2.webp", tags: ["UX/UI"], left: CARD_X.c1, top: row(0), href: "/cases/tcl-semp" },
+  { name: "TCL SEMP", image: "/projects/tcl-semp-cover-v4.webp", tags: ["UX/UI"], left: CARD_X.c1, top: row(0), href: "/cases/tcl-semp" },
   { name: "OnProfit", image: "/projects/onprofit.webp", tags: ["UX/UI", "3D", "Art Direction"], left: CARD_X.c2, top: row(0), href: "/cases/onprofit", seals: ONPROFIT_SEALS },
-  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: CARD_X.c1, top: row(1), href: "/cases/holly-bakehouse" },
-  { name: "Remapp", image: "/projects/remapp.jpg", tags: ["3D", "Illustration"], left: CARD_X.c2, top: row(1), href: "/cases/remapp" },
+  { name: "Remapp", image: "/projects/remapp-cover-v4.webp", tags: ["3D", "Illustration"], left: CARD_X.c1, top: row(1), href: "/cases/remapp" },
+  { name: "Holly Bakehouse", image: "/projects/holly-bakehouse-cover-v2.webp", tags: ["Illustration", "Logo Design"], left: CARD_X.c2, top: row(1), href: "/cases/holly-bakehouse" },
   { name: "Farol Santander", image: "/projects/farol.jpg", tags: ["UX/UI"], left: CARD_X.c1, top: row(2), objectPosition: "center bottom" },
   { name: "Hungara Lanches", image: "/projects/hungara.jpg", tags: ["UX/UI", "Illustration"], left: CARD_X.c2, top: row(2) },
   { name: "Trivium", image: "/projects/trivium.jpg", tags: ["UX/UI", "Illustration"], left: CARD_X.c1, top: row(3), objectPosition: "center top" },
@@ -149,7 +149,7 @@ function ProjectCard({ card }: { card: Card }) {
               alt={card.name}
               frame={{ width: CARD_W, height: IMAGE_H, canvas: FRAME }}
               objectPosition={card.objectPosition ?? "center"}
-              travel={0.06}
+              travel={0.67}
               zoom={!isWip(card)}
             />
             {card.seals && (

@@ -279,6 +279,11 @@ button[data-cursor-magnet][data-magnet-active] {
     inset 0 0 14px rgb(255 255 255 / 0.55),
     var(--soft-shadow);
 }
+/* The open menu panel: the same glass, nearly opaque, so the page behind
+   doesn't compete with the menu. */
+.glass-pill.glass-pill--open {
+  background-color: rgb(255 255 255 / 0.95);
+}
 .glass-pill::after {
   content: "";
   position: absolute;

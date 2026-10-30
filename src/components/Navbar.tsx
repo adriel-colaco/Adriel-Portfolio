@@ -93,7 +93,11 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
   // The closed pill is liquid glass (LiquidGlass.tsx) where the browser can
   // render it, frosted glass elsewhere.
   const pillRef = useRef<HTMLDivElement>(null);
-  const glass = useLiquidGlass(pillRef, !open);
+  // The lens only goes on once the pill has finished closing: while it's still
+  // shrinking from the open panel its refraction map can't be drawn (too big,
+  // and redrawn every frame), so it stays frosted glass until then.
+  const [settled, setSettled] = useState(true);
+  const glass = useLiquidGlass(pillRef, !open && settled);
   const pathname = usePathname();
 
   // A section link on the home scrolls there (once the menu has let go of the
@@ -236,22 +240,25 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
           {glass.filter}
           <div
             ref={pillRef}
+            onTransitionEnd={(e) => e.target === e.currentTarget && setSettled(!open)}
             // Both ways on the entrance curve: opening unfolds over 1s; closing
             // a little quicker, starting just after the click. The contents
             // fade out even faster, so they're all but gone while the panel's
             // soft start has barely moved — nothing gets squeezed, and the
             // close still answers straight away.
-            // Closed, it's a glass pill with no outline (Figma 6:100, in
+            // Glass with no outline, closed and open alike (Figma 6:100, in
             // glass: `.glass-pill`) — no border at all, since the glass's
-            // refraction map has to line up with its edge; open, a white
-            // panel with a hairline. On desktop the closed pill
+            // refraction map has to line up with its edge. Open, the panel is
+            // too big for the lens (LiquidGlass.tsx), so it's the frosted
+            // version of the same glass, its tint raised to 95% white
+            // (`.glass-pill--open`) so the menu stands clear of the page. On desktop the closed pill
             // is 386×70, scaled with its contents by --nav-zoom. Portrait
             // tablets keep their 80px-tall, 45% pill (its minimum scaled down
             // by --nav-zoom).
-            className={`flex flex-col overflow-hidden rounded-[33px] transition-[width,height,background-color] landscape-tablet:rounded-[calc(35px*var(--nav-zoom))] portrait-tablet:rounded-[calc(40px*var(--nav-zoom))] ${
+            className={`glass-pill flex flex-col overflow-hidden rounded-[33px] transition-[width,height,background-color] landscape-tablet:rounded-[calc(35px*var(--nav-zoom))] portrait-tablet:rounded-[calc(40px*var(--nav-zoom))] ${
               open
-                ? "h-[calc(100dvh-20px)] w-full max-w-[650px] border border-line bg-white landscape-tablet:border-[1.5px] portrait-tablet:border duration-[1s] ease-(--ease-enter) landscape-tablet:h-[calc(100dvh-40px*var(--nav-zoom))] landscape-tablet:w-[97.222%] landscape-tablet:max-w-none"
-                : "glass-pill h-[66px] w-full max-w-[650px] delay-[60ms] duration-(--dur-ui) ease-(--ease-enter) landscape-tablet:h-[calc(70px*var(--nav-zoom))] landscape-tablet:w-[calc(386px*var(--nav-zoom))] landscape-tablet:max-w-none portrait-tablet:h-[calc(80px*var(--nav-zoom))] portrait-tablet:w-[max(45.139%,calc(430px*var(--nav-zoom)))]"
+                ? "glass-pill--open h-[calc(100dvh-20px)] w-full max-w-[650px] duration-[1s] ease-(--ease-enter) landscape-tablet:h-[calc(100dvh-40px*var(--nav-zoom))] landscape-tablet:w-[97.222%] landscape-tablet:max-w-none"
+                : "h-[66px] w-full max-w-[650px] delay-[60ms] duration-(--dur-ui) ease-(--ease-enter) landscape-tablet:h-[calc(70px*var(--nav-zoom))] landscape-tablet:w-[calc(386px*var(--nav-zoom))] landscape-tablet:max-w-none portrait-tablet:h-[calc(80px*var(--nav-zoom))] portrait-tablet:w-[max(45.139%,calc(430px*var(--nav-zoom)))]"
             }`}
             style={glass.style}
           >

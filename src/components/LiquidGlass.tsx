@@ -88,6 +88,8 @@ function displacementMap(w: number, h: number, r: number) {
  *  so they get the frosted glass. */
 function supportsSvgBackdrop() {
   if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return false;
+  // Reduced transparency: the glass is solid (globals.css), so no lens either.
+  if (window.matchMedia("(prefers-reduced-transparency: reduce)").matches) return false;
   const ua = navigator.userAgent;
   if ((/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) || /Firefox/.test(ua)) return false;
   const probe = document.createElement("div");

@@ -103,7 +103,19 @@
   }
 }
 
+/* The body carries the canvas; the root paints the area a rubber-band scroll
+   uncovers past either end of the page. On a page with the top glow (the
+   home) that's the brand blue, so it continues the glow above and the blue
+   footer below instead of flashing a light bar; elsewhere, the canvas. */
+html {
+  background-color: var(--canvas);
+}
+html:has(.top-glow) {
+  background-color: #001fff;
+}
+
 body {
+  min-height: 100vh;
   background: var(--canvas);
   color: var(--muted);
   font-family: var(--font-geist-mono), ui-monospace, monospace;
@@ -222,12 +234,41 @@ body {
   opacity: 0;
 }
 
-/* Hold the menu button in its hover look while the magnet holds it captured,
-   even when the pointer sits in the padded zone just outside the button. (The
-   menu button is the only magnet that's a <button>; the CTAs and pills are
-   links with hovers of their own.) */
-button[data-cursor-magnet][data-magnet-active] {
+/* The menu button's hover (Navbar): the hero CTA's glow (.hero-cta-glow), in
+   near-black — it rises from the bottom centre over the blue until it fills
+   the button, and sinks back on leaving. Held while the magnet holds the
+   button captured, even with the pointer just outside it. */
+.nav-button-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-color: #1e1e1e;
+  --cta-glow: 0;
+  -webkit-mask-image: var(--glow-mask);
+  mask-image: var(--glow-mask);
+  opacity: 0;
+  transition:
+    --cta-glow 0.9s var(--ease-fade),
+    opacity 0s linear 0.9s;
+}
+.nav-button:hover .nav-button-glow,
+.nav-button[data-magnet-active] .nav-button-glow {
+  --cta-glow: 1;
+  opacity: 1;
+  transition:
+    --cta-glow 1s var(--ease-enter),
+    opacity 0s;
+}
+@media (hover: none) {
+  .nav-button .nav-button-glow {
+    opacity: 0 !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-button-glow {
+    transition: none !important;
+  }
 }
 /* (The menu button's bars only shorten while it's closed — open, they're the X.) */
 [data-cursor-magnet][data-magnet-active]:not([aria-expanded="true"]) .nav-bar-top {
@@ -251,6 +292,7 @@ button[data-cursor-magnet][data-magnet-active] {
   border-color: #e0e0e0;
   background-color: transparent;
   transition:
+    scale var(--dur-ui) var(--ease-ui),
     background-color var(--dur-hover) var(--ease-fade),
     color var(--dur-hover) var(--ease-fade),
     border-color var(--dur-hover) var(--ease-fade);
@@ -341,27 +383,27 @@ button[data-cursor-magnet][data-magnet-active] {
   align-items: center;
   pointer-events: none;
 }
+/* The glow's soft circle (the CTA and the menu button share it): centred well
+   below the element, --cta-glow (0–1) growing it from out of sight until its
+   solid part covers the element, its edge easing out over several stops. */
+.hero-cta-glow,
+.nav-button-glow {
+  --glow-mask: radial-gradient(
+    circle at 50% 145%,
+    #000 calc(var(--cta-glow) * 180% - 80%),
+    rgb(0 0 0 / 0.7) calc(var(--cta-glow) * 180% - 60%),
+    rgb(0 0 0 / 0.35) calc(var(--cta-glow) * 180% - 40%),
+    rgb(0 0 0 / 0.12) calc(var(--cta-glow) * 180% - 20%),
+    transparent calc(var(--cta-glow) * 180%)
+  );
+}
 .hero-cta-glow {
   background-color: #001fff;
   --cta-glow: 0;
   /* The soft edge eases out (several stops) instead of fading linearly, which
      would leave a visible rim where it ends. */
-  -webkit-mask-image: radial-gradient(
-    circle at 50% 145%,
-    #000 calc(var(--cta-glow) * 180% - 80%),
-    rgb(0 0 0 / 0.7) calc(var(--cta-glow) * 180% - 60%),
-    rgb(0 0 0 / 0.35) calc(var(--cta-glow) * 180% - 40%),
-    rgb(0 0 0 / 0.12) calc(var(--cta-glow) * 180% - 20%),
-    transparent calc(var(--cta-glow) * 180%)
-  );
-  mask-image: radial-gradient(
-    circle at 50% 145%,
-    #000 calc(var(--cta-glow) * 180% - 80%),
-    rgb(0 0 0 / 0.7) calc(var(--cta-glow) * 180% - 60%),
-    rgb(0 0 0 / 0.35) calc(var(--cta-glow) * 180% - 40%),
-    rgb(0 0 0 / 0.12) calc(var(--cta-glow) * 180% - 20%),
-    transparent calc(var(--cta-glow) * 180%)
-  );
+  -webkit-mask-image: var(--glow-mask);
+  mask-image: var(--glow-mask);
   /* Invisible at rest whatever the mask does (a browser that can't draw it
      would otherwise show the whole blue layer); it only fades out once the
      glow has sunk away. */
@@ -395,10 +437,11 @@ button[data-cursor-magnet][data-magnet-active] {
   color: #ffffff;
 }
 /* The labels swap as the glow comes in: the dark label and icon shoot up out
-   of the pill (accelerating away), while the white ones spring up into place
-   from below it (decelerating with a slight overshoot) — the icon a beat
-   after the label each time. Leaving, it plays backwards: the white ones drop
-   away and the dark ones spring back down into place. The pill's overflow
+   of the pill (accelerating away), while the white ones glide up into place
+   from below it (decelerating, critically damped: a hover carries no momentum,
+   so nothing overshoots) — the icon a beat after the label each time. Leaving,
+   it plays backwards: the white ones drop away and the dark ones settle back
+   into place. The pill's overflow
    clips them as they travel; each moves its own height and a half, enough to
    clear the edge. */
 .hero-cta-dark > *,
@@ -416,7 +459,7 @@ button[data-cursor-magnet][data-magnet-active] {
 .hero-cta-dark > * {
   --swap-delay: calc(0.15s + var(--swap-stagger, 0s));
   --swap-dur: 0.7s;
-  --swap-ease: cubic-bezier(0.2, 1.35, 0.4, 1);
+  --swap-ease: var(--ease-ui);
 }
 .hero-cta-white > * {
   opacity: 0;
@@ -442,7 +485,7 @@ button[data-cursor-magnet][data-magnet-active] {
   translate: 0 0;
   --swap-delay: calc(0.3s + var(--swap-stagger, 0s));
   --swap-dur: 0.7s;
-  --swap-ease: cubic-bezier(0.2, 1.35, 0.4, 1);
+  --swap-ease: var(--ease-ui);
   --fade-lag: 0s;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -454,14 +497,122 @@ button[data-cursor-magnet][data-magnet-active] {
   }
 }
 
-/* Ink disc: a small trailing dot at rest, expands to full size over a card.
-   The badge keeps its own springy overshoot on purpose (the one playful
-   exception to the site's two curves): it's a pointer toy, not content. */
+/* The top glow (TopGlow): the brand blue pooled at the top of the page,
+   under the header, fading down into the canvas. It belongs to the page, not
+   the screen: it scrolls away with the hero. It fades in once the page is up
+   (held while the loader covers it), a beat after the header drops in. */
+.top-glow {
+  /* Eased stops (an ease-out falloff), so it melts into the canvas with no
+     visible edge. */
+  background: linear-gradient(
+    to bottom,
+    rgb(0 31 255 / 1) 0%,
+    rgb(0 31 255 / 0.86) 10%,
+    rgb(0 31 255 / 0.68) 22%,
+    rgb(0 31 255 / 0.48) 36%,
+    rgb(0 31 255 / 0.3) 51%,
+    rgb(0 31 255 / 0.16) 66%,
+    rgb(0 31 255 / 0.06) 82%,
+    rgb(0 31 255 / 0) 100%
+  );
+  animation: top-glow-in 1.6s var(--ease-fade) 0.5s backwards;
+}
+@keyframes top-glow-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .top-glow {
+    animation: none;
+  }
+}
+
+/* The unpinned hero (v1) rises a little slower than the page: over the first
+   screen of scroll it lags 20% behind, tied to the scroll by the browser. */
+@keyframes hero-lag {
+  to {
+    translate: 0 20vh;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .hero-lag {
+    animation: hero-lag linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 100vh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-lag {
+    animation: none;
+  }
+}
+
+/* PinnedFade's drift: the pinned hero still rises, at a tenth of the
+   scroll's pace, over the scroll it takes to fade (--drift-range) — tied to
+   the scroll by the browser itself, so it never lags it. Where scroll-driven
+   animations aren't supported it simply stays pinned. */
+@keyframes pinned-drift {
+  to {
+    translate: 0 calc(var(--drift-range) * -0.1);
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .pinned-drift {
+    animation: pinned-drift linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 var(--drift-range);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pinned-drift {
+    animation: none;
+  }
+}
+
+/* Press feedback: the site's buttons give on pointer-down, instantly (a quick
+   ease-out in), and spring back on release on the UI curve. `scale` rather
+   than `transform`, so it composes with their entrances and the magnet (the
+   footer pills carry it in their own transition list). */
+:is(.hero-cta, .nav-button) {
+  transition-property: scale;
+  transition-duration: var(--dur-ui);
+  transition-timing-function: var(--ease-ui);
+}
+:is(.hero-cta, .nav-button):active {
+  scale: 0.97;
+  transition-duration: 0.1s;
+  transition-timing-function: ease-out;
+}
+.footer-pill:active {
+  scale: 0.97;
+  transition:
+    scale 0.1s ease-out,
+    background-color var(--dur-hover) var(--ease-fade),
+    color var(--dur-hover) var(--ease-fade),
+    border-color var(--dur-hover) var(--ease-fade);
+}
+
+/* Reduced transparency: the glass turns solid, and the scroll-edge blur under
+   the header goes. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-pill {
+    background-color: #ffffff !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .gradual-blur {
+    display: none;
+  }
+}
+
+/* Ink disc: a small trailing dot at rest, expands to full size over a card,
+   settling without overshoot (the UI curve) — nothing threw it there. */
 .cursor-disc {
   background-color: var(--disc);
   transform: scale(0.12);
   transition:
-    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.5s var(--ease-ui),
     background-color var(--dur-hover) var(--ease-fade);
 }
 
@@ -493,7 +644,7 @@ button[data-cursor-magnet][data-magnet-active] {
   transform-origin: center;
   transition:
     opacity var(--dur-hover) var(--ease-fade),
-    transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 0.5s var(--ease-ui);
 }
 
 .project-cursor.is-hovering .cursor-ring {
@@ -862,6 +1013,18 @@ button[data-cursor-magnet][data-magnet-active] {
   overflow: visible;
 }
 
+/* Safari draws a transformed word (.split-word, its own compositing layer)
+   only within its box, cutting off the blur of its letters where it spills
+   past it — the hero's changing word lost its edges as it blurred in and out.
+   So on this profile the word's box reaches well past its letters (padding,
+   cancelled by an equal negative margin so the layout doesn't move), roomy
+   enough for a 10px blur, and it gives up its standing layer. */
+[data-entrance="blur"] .split-word {
+  padding: 32px;
+  margin: -32px;
+  will-change: auto;
+}
+
 /* Loading screen — covers the page from first paint, then lifts like a curtain
    (translateY to -100%) once the count reaches 100%. Its ease-in-out is a
    deliberate exception: a full-screen panel that starts from rest reads best
@@ -915,7 +1078,7 @@ button[data-cursor-magnet][data-magnet-active] {
 
 /* While the loader is up, hold the site's entrance animations on their first
    frame (delays included), so they play as the curtain rises, not beneath it. */
-html:not([data-site-loaded]) body:has(.site-loader[data-state="loading"]) :is(.split-word, .rise, .drop-block) {
+html:not([data-site-loaded]) body:has(.site-loader[data-state="loading"]) :is(.split-word, .rise, .drop-block, .top-glow) {
   animation-play-state: paused;
 }
 
@@ -955,7 +1118,8 @@ html[data-page-cover]
     .curtain-edge,
     .line-in,
     .draw,
-    .fade-up
+    .fade-up,
+    .top-glow
   ) {
   animation-play-state: paused !important;
 }

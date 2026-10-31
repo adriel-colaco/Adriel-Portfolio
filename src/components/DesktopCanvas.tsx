@@ -9,8 +9,11 @@ import ProjectCursor from "./ProjectCursor";
 import LinhaSection from "./LinhaSection";
 import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
+import PinnedFade from "./PinnedFade";
+import type { HomeVariant } from "./homeVariants";
 import { WHATSAPP_URL } from "./contact";
 import ArrowIcon from "./ArrowIcon";
+import TopGlow from "./TopGlow";
 import { introDelay, introStyle } from "./intro";
 
 /**
@@ -194,7 +197,7 @@ function ProjectCard({ card, children }: { card: Card; children?: ReactNode }) {
   );
 }
 
-export default function DesktopCanvas() {
+export default function DesktopCanvas({ variant }: { variant: HomeVariant }) {
   return (
     <div className="hidden w-full landscape-tablet:block portrait-tablet:hidden" style={{ containerType: "inline-size" }}>
       <ProjectCursor />
@@ -211,17 +214,18 @@ export default function DesktopCanvas() {
             style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
           />
         ))}
+        {/* The blue glow at the top of the page, under the header (v1) */}
+        {variant.glow && <TopGlow height={u(320)} />}
 
         {/* Heading + CTA as one block over columns 2–3, centred (Figma 0:14) — vertically in
-            the space between the fixed header and the first card row. */}
-        <div
-          className="absolute flex flex-col items-center justify-center"
-          style={{
-            left: u(395),
-            width: u(650),
-            top: "var(--header-bottom)",
-            height: `calc(${ANCHOR} - ${u(HERO_LIFT)} - var(--header-bottom))`,
-          }}
+            the space between the fixed header and the first card row. In v2
+            it stays put as the page scrolls, blurring away under the cards
+            sliding up over it (PinnedFade); in v1 it scrolls like the rest. */}
+        <PinnedFade
+          pinned={variant.pinnedHero}
+          trackStyle={{ left: u(395), width: u(650), top: "var(--header-bottom)", bottom: 0 }}
+          className="flex flex-col items-center justify-center"
+          style={{ top: "var(--header-bottom)", height: `calc(${ANCHOR} - ${u(HERO_LIFT)} - var(--header-bottom))` }}
         >
           <HeroHeading className="text-center font-serif text-ink" style={{ fontSize: HERO_SIZE, lineHeight: 0.95 }} />
 
@@ -234,7 +238,7 @@ export default function DesktopCanvas() {
           >
             <HeroCTA label="Get in touch" href={WHATSAPP_URL} fontSize={u(28)} iconSize={u(24)} paddingLeft={u(24)} paddingRight={u(20)} />
           </div>
-        </div>
+        </PinnedFade>
 
         {/* "Recent work ↘" across the empty first column, 20px in from its grid
             strokes on both sides, level with the first card row (Figma 24:408 /

@@ -6,6 +6,7 @@ import { subscribe, prefersReducedMotion } from "./parallaxTicker";
 import { QUOTE_START, QUOTE_SPAN } from "./ScrollQuote";
 import { LINE_SPAN_FACTOR } from "./ScrollLine";
 import SplitText from "./SplitText";
+import ItalicI from "./ItalicI";
 import { INTRO_DURATION, INTRO_EASE } from "./intro";
 import { useEntrance } from "./Entrance";
 import SocialIcons from "./SocialIcons";
@@ -615,7 +616,7 @@ function TabletPill({
     >
       <span className="flex items-center" style={{ gap: ut(20) }}>
         <span className="whitespace-nowrap" style={{ fontSize: ut(45), lineHeight: 1 }}>
-          {label}
+          <ItalicI>{label}</ItalicI>
         </span>
         {children}
       </span>
@@ -655,7 +656,7 @@ function MobilePill({
       style={{ height: um(92), gap: um(12) }}
     >
       <span className="whitespace-nowrap" style={{ fontSize: um(32), lineHeight: 1 }}>
-        {label}
+        <ItalicI>{label}</ItalicI>
       </span>
       {children}
     </a>
@@ -689,7 +690,7 @@ function ContactPill({
     >
       <span className="flex items-center" style={{ gap: u(20) }}>
         <span className="whitespace-nowrap" style={{ fontSize: u(42), lineHeight: 1 }}>
-          {label}
+          <ItalicI>{label}</ItalicI>
         </span>
         {children}
       </span>

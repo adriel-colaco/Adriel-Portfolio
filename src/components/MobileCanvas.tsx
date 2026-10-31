@@ -8,6 +8,8 @@ import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
 import { WHATSAPP_URL } from "./contact";
 import ArrowIcon from "./ArrowIcon";
+import TopGlow from "./TopGlow";
+import type { HomeVariant } from "./homeVariants";
 import LinhaSectionMobile from "./LinhaSectionMobile";
 import { introStyle } from "./intro";
 import Reveal from "./Reveal";
@@ -163,7 +165,7 @@ function ProjectCard({ card, entrance }: { card: MCard; entrance: boolean }) {
   );
 }
 
-export default function MobileCanvas() {
+export default function MobileCanvas({ variant }: { variant: HomeVariant }) {
   return (
     <div className="w-full" style={{ containerType: "inline-size" }}>
       {/* Canvas: the absolute hero + cards area, then Capabilities in flow. The
@@ -179,6 +181,8 @@ export default function MobileCanvas() {
             style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
           />
         ))}
+        {/* The blue glow at the top of the page, under the header */}
+        {variant.glow && <TopGlow height={u(260)} />}
 
         {/* Holds the height of the absolutely placed hero and cards. */}
         <div aria-hidden style={{ height: y(CARDS_END) }} />

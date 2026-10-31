@@ -11,6 +11,8 @@ import HeroHeading from "./HeroHeading";
 import HeroCTA from "./HeroCTA";
 import { WHATSAPP_URL } from "./contact";
 import ArrowIcon from "./ArrowIcon";
+import TopGlow from "./TopGlow";
+import type { HomeVariant } from "./homeVariants";
 import ScrollQuote from "./ScrollQuote";
 import ScrollLine, { DESKTOP_LINE } from "./ScrollLine";
 import Portrait from "./Portrait";
@@ -236,7 +238,7 @@ function LinhaSectionTablet() {
 
 /* ------------------------------------------------------------------ canvas */
 
-export default function TabletCanvas() {
+export default function TabletCanvas({ variant }: { variant: HomeVariant }) {
   return (
     <div className="hidden w-full portrait-tablet:block" style={{ containerType: "inline-size" }}>
       <ProjectCursor />
@@ -250,6 +252,8 @@ export default function TabletCanvas() {
             style={{ left: `calc(${u(x)} - ${GRID_STROKE / 2}px)`, width: `${GRID_STROKE}px` }}
           />
         ))}
+        {/* The blue glow at the top of the page, under the header */}
+        {variant.glow && <TopGlow height={u(360)} />}
 
         {/* Holds the height of the absolutely placed hero and cards. */}
         <div aria-hidden style={{ height: y(CARDS_END) }} />

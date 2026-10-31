@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import GradualBlur from "@/components/GradualBlur";
 import CaseCanvas from "@/components/CaseCanvas";
 import FooterReveal from "@/components/FooterReveal";
 import { CASES, getCase } from "@/components/cases";
@@ -30,6 +31,7 @@ export default async function CasePage(props: PageProps<"/cases/[slug]">) {
     <EntranceScope profile="blur">
       {/* No loading screen on inner pages: the header drops in straight away. */}
       <Navbar entranceDelay={0} />
+      <GradualBlur />
       <main>
         <CaseCanvas data={data} />
       </main>

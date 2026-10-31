@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowIcon from "./ArrowIcon";
+import ItalicI from "./ItalicI";
 import type { ComponentProps } from "react";
 import { externalProps } from "./contact";
 
@@ -35,7 +36,7 @@ export default function HeroCTA({
   const content = (className: string) => (
     <span className={`${className} flex flex-1 items-center justify-between`}>
       <span className="whitespace-nowrap leading-none" style={{ fontSize }}>
-        {label}
+        <ItalicI>{label}</ItalicI>
       </span>
       <ArrowIcon glyph={icon} style={{ width: iconSize, height: iconSize }} />
     </span>

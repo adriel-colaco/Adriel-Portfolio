@@ -159,8 +159,8 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
     if (!btn || !icon || prefersReducedMotion()) return;
 
     const PAD = 12; // reacts slightly beyond the button edge, like the magnet
-    const STRENGTH = 0.1; // fraction of the cursor offset the icon follows
-    const MAX = 1.8; // px cap so it only nudges
+    const STRENGTH = 0.22; // fraction of the cursor offset the icon follows
+    const MAX = 4.5; // px cap: a clear pull that still stays inside the button
 
     let tx = 0;
     let ty = 0;
@@ -299,12 +299,15 @@ export default function Navbar({ entranceDelay }: { entranceDelay?: number } = {
                   aria-expanded={open}
                   data-cursor-magnet
                   onClick={() => setOpen((v) => !v)}
-                  // Blue in both states (Figma 37:29), darkening on hover.
-                  className="group flex h-[44px] w-[60px] shrink-0 items-center justify-center rounded-full bg-ink transition-colors duration-(--dur-hover) ease-(--ease-fade) hover:bg-[#1e1e1e] landscape-tablet:h-[50px] landscape-tablet:w-[81px]"
+                  // Blue in both states (Figma 37:29); on hover a black glow rises in.
+                  className="nav-button group relative isolate flex h-[44px] w-[60px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink landscape-tablet:h-[50px] landscape-tablet:w-[81px]"
                 >
+                  {/* The hover: a soft black glow rising from the bottom, like the
+                      hero CTA's blue one (globals.css). */}
+                  <span aria-hidden className="nav-button-glow" />
                   <span
                     ref={iconRef}
-                    className="flex items-center justify-center will-change-transform"
+                    className="relative flex items-center justify-center will-change-transform"
                   >
                     {/* Two bars that morph into the close X (Figma 37:29) and
                         back: opening, they slide together to the centre, then

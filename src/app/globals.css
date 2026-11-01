@@ -126,26 +126,6 @@ body {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-/* Infinite logo marquee */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 40s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
-    animation: none;
-  }
-}
-
 /* SplitText — word-by-word rise reveal (text expands upward from a mask) */
 @keyframes split-rise {
   from {

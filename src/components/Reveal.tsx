@@ -1,8 +1,33 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
-import { useRef } from "react";
-import { useRevealOnView } from "./Capabilities";
+import type { CSSProperties, ReactNode, RefObject } from "react";
+import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "./parallaxTicker";
+
+/**
+ * Holds an element's `.rise` / `.draw` children on their first frame (armed)
+ * until it scrolls `rootMargin` into view, then lets them play once. Without
+ * JS nothing is armed, so the entrance just plays at load.
+ */
+export function useRevealOnView(ref: RefObject<HTMLElement | null>, rootMargin = "0px 0px -20% 0px") {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotion()) return;
+    el.dataset.reveal = "armed";
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          el.dataset.reveal = "shown";
+          io.disconnect();
+        }
+      },
+      { rootMargin },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, rootMargin]);
+}
+
 
 /**
  * Holds its `.rise` / `.draw` descendants on their first frame until it

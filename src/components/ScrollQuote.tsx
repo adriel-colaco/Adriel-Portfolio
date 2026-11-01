@@ -61,6 +61,7 @@ export default function ScrollQuote({
     let cur = 0;
     let drawn = -1;
     const unsubscribe = subscribe(() => {
+      if (!el.getClientRects().length) return; // its layout is the hidden one (desktop/tablet/mobile)
       const r = el.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
       // A wide window keeps the letter pace proportional to the scroll.

@@ -1,14 +1,32 @@
 /**
  * A single shared requestAnimationFrame loop that drives every parallax element
  * (images and cards). One loop for all subscribers keeps things cheap, and it
- * keeps ticking while anything is subscribed — which is what lets the motion
- * ease on (lerp) for a moment *after* the scroll itself has stopped.
+ * keeps ticking for a moment *after* the scroll itself has stopped — which is
+ * what lets the motion ease on (lerp) — then sleeps until the next input.
  */
 export const LERP = 0.05; // easing factor — lower = longer, smoother glide
 
 type Tick = () => void;
 const ticks = new Set<Tick>();
 let running = false;
+
+// The loop only runs while something is moving: it goes to sleep IDLE_MS after
+// the last scroll, resize or pointer move (long enough for every eased glide to
+// settle), and wakes on the next one — so a page left still costs no frames.
+const IDLE_MS = 2000;
+let lastActivity = 0;
+const wake = () => {
+  lastActivity = performance.now();
+  if (!running && ticks.size > 0) {
+    running = true;
+    requestAnimationFrame(loop);
+  }
+};
+if (typeof window !== "undefined") {
+  for (const type of ["scroll", "resize", "pointermove", "touchmove", "wheel"]) {
+    window.addEventListener(type, wake, { passive: true });
+  }
+}
 
 function loop() {
   // One subscriber failing (say, an element gone mid-frame) mustn't stop the
@@ -20,7 +38,7 @@ function loop() {
       console.error(err);
     }
   });
-  if (ticks.size === 0) {
+  if (ticks.size === 0 || performance.now() - lastActivity > IDLE_MS) {
     running = false;
     return;
   }
@@ -30,10 +48,7 @@ function loop() {
 /** Subscribe a per-frame callback. Returns an unsubscribe function. */
 export function subscribe(fn: Tick): () => void {
   ticks.add(fn);
-  if (!running) {
-    running = true;
-    requestAnimationFrame(loop);
-  }
+  wake();
   return () => {
     ticks.delete(fn);
   };

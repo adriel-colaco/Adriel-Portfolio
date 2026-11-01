@@ -65,6 +65,7 @@ export default function ParallaxImage({
 
     let current = 0;
     const step = () => {
+      if (!frame.getClientRects().length) return; // in the hidden layout
       const rect = frame.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
       if (rect.bottom < -vh || rect.top > vh * 2) return;

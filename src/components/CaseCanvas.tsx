@@ -367,7 +367,7 @@ function CaseDesktop({ data }: { data: Case }) {
         {works.length > 0 && (
           <Reveal
             className="relative grid"
-            style={{ marginTop: u(200), gridTemplateColumns: WORK_COLS.map(u).join(" "), columnGap: u(GAP) }}
+            style={{ marginTop: u(120), gridTemplateColumns: WORK_COLS.map(u).join(" "), columnGap: u(GAP) }}
             rootMargin="0px 0px -20% 0px"
           >
             <div className="flex flex-col justify-between" style={{ height: u(448) }}>
@@ -493,7 +493,7 @@ function CaseTablet({ data }: { data: Case }) {
         {/* More works: the title row across both columns, the cards on the
             2 columns, "See more projects" in the cell after the last card */}
         {works.length > 0 && (
-          <Reveal className="relative" style={{ marginTop: ut(160) }} rootMargin="0px 0px -20% 0px">
+          <Reveal className="relative" style={{ marginTop: ut(100) }} rootMargin="0px 0px -20% 0px">
             <div
               className="rise flex items-center justify-between text-muted"
               style={{ height: ut(ROW), paddingInline: ut(10), fontSize: ut(14), lineHeight: 1.4, ...timing(0) }}
@@ -607,8 +607,10 @@ function CaseMobile({ data }: { data: Case }) {
 
         {/* More works */}
         {works.length > 0 && (
-          <div className="relative flex flex-col" style={{ marginTop: um(100), gap: um(40) }}>
-            <Reveal>
+          <div className="relative flex flex-col" style={{ marginTop: um(60), gap: um(40) }}>
+            {/* The title's hairline sits 10px above the first card (the column's
+                40px gap, less 30). */}
+            <Reveal style={{ marginBottom: um(-30) }}>
               <div
                 className="rise flex items-center justify-between text-muted"
                 style={{ fontSize: um(13), lineHeight: 1.4, ...timing(0) }}

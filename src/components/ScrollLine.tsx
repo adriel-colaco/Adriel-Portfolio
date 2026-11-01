@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { subscribe, prefersReducedMotion } from "./parallaxTicker";
 import { QUOTE_START, QUOTE_SPAN } from "./ScrollQuote";
 
@@ -24,16 +24,15 @@ export const MOBILE_LINE = { viewBox: "0 0 320 463", strokeWidth: 1.5, d:
   "M160.206 1C160.206 119.865 8.9375 -1.5578 1.1859 50.9967C-1.57239 69.6974 25.9846 101.409 109.3 130.522C179.301 154.984 286.687 161.662 312.927 120.495C353.662 56.59 179.807 24.6944 79.6276 116.278C-20.5525 207.861 3.9781 35.6434 77.3236 69.3861C123.078 90.4353 154.705 102.38 208.356 105.219C311.439 110.676 356.628 31.7544 263.131 22.4789C214.224 17.6269 96.8974 55.2141 207.997 114.115C104.274 114.115 163.201 189.623 204.06 142.412C248.286 91.31 151.792 54.8358 116.184 114.115C85.1117 165.843 142.887 179.649 157.51 178.915C172.133 178.18 165.391 165.028 154.183 169.746C142.976 174.464 136.945 197.154 146.021 233.652C157.13 278.328 160.013 319.831 160.013 355.5V463" };
 
 // The line comes into focus as it's drawn, like the quote above it: its
-// leading stretch is laid as short segments, each a little more transparent
-// and more blurred toward the tip, so the stroke emerges out of a blur and
-// sharpens behind it over a long, soft run. SVG gradients and filters can't
-// follow a path, so the fade is built from the path itself; segments share
-// one of BLUR_LEVELS blur filters (grouped, so only that many are filtered).
+// leading stretch is laid as short segments, each a little fainter and wider
+// toward the tip — a wide, faint stroke reads as a blurred one — so the line
+// emerges soft and sharpens behind it over a long run. (Real SVG blur filters
+// did this too, but re-blurring the whole drawing every frame made the page
+// stutter; widths and opacities cost nothing.) SVG gradients can't follow a
+// path, so the fade is built from the path itself.
 const TAIL = 0.09; // the focusing stretch, as a fraction of the whole line
-const TAIL_STEPS = 64; // segments in it
-const BLUR_LEVELS = 16;
-const MAX_BLUR = 10; // px on screen, at the tip — for the desktop's ~540px-wide line
-const BLUR_REF_W = 540; // a smaller line gets proportionally less (else it smears)
+const TAIL_STEPS = 60; // segments in it
+const MAX_SPREAD = 7; // the tip's stroke, as a multiple of the line's own width
 
 /**
  * The hand-drawn line under the quote, drawn by the scroll: nothing shows at
@@ -54,7 +53,6 @@ export default function ScrollLine({
   const wrapRef = useRef<HTMLDivElement>(null);
   const drawRef = useRef<SVGPathElement>(null);
   const tailRef = useRef<SVGGElement>(null);
-  const blurId = useId().replace(/[^a-zA-Z0-9-]/g, "");
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -62,18 +60,7 @@ export default function ScrollLine({
     const tail = tailRef.current;
     if (!wrap || !path || !tail) return;
     const len = path.getTotalLength();
-    // Segments in order along the line (they sit in groups, one per blur level).
-    const segments = Array.from(tail.querySelectorAll<SVGPathElement>("path")).sort(
-      (a, b) => +a.dataset.i! - +b.dataset.i!,
-    );
-    // The blurs are in the drawing's units: scale them so they read as MAX_BLUR
-    // screen px whatever size the line is drawn at.
-    const toUnits = line.viewBox.split(" ").map(Number)[2] / (wrap.clientWidth || 1);
-    // (The filters live in the SVG's <defs>, outside the tail group.)
-    wrap.querySelectorAll("feGaussianBlur").forEach((f, k) => {
-      const maxBlur = MAX_BLUR * Math.min(1, (wrap.clientWidth || BLUR_REF_W) / BLUR_REF_W);
-      f.setAttribute("stdDeviation", String((maxBlur * ((k + 1) / BLUR_LEVELS) * toUnits).toFixed(2)));
-    });
+    const segments = Array.from(tail.children) as SVGPathElement[];
 
     // Lays the blue up to `drawn` (path units): solid, then the fading tip.
     // Also publishes how far the draw has actually got (`data-drawn`, 0–1), so
@@ -99,6 +86,7 @@ export default function ScrollLine({
     draw(0);
     let cur = 0;
     return subscribe(() => {
+      if (!wrap.getClientRects().length) return; // its layout is the hidden one (desktop/tablet/mobile)
       const r = wrap.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
       // Chain off the quote: the draw only begins once the title has finished
@@ -124,21 +112,11 @@ export default function ScrollLine({
       if (Math.abs(target - cur) < 0.0005) cur = target;
       draw(len * cur);
     });
-  }, [line.viewBox]);
-
-  // Segment i (0 = the sharpest, next to the solid line) → its blur level.
-  const levelOf = (i: number) => Math.min(BLUR_LEVELS - 1, Math.floor((i / TAIL_STEPS) * BLUR_LEVELS));
+  }, []);
 
   return (
     <div ref={wrapRef} data-scroll-line className={className} style={style} aria-hidden>
       <svg viewBox={line.viewBox} fill="none" className="block h-full w-full" overflow="visible">
-        <defs>
-          {Array.from({ length: BLUR_LEVELS }, (_, k) => (
-            <filter key={k} id={`${blurId}-${k}`} x="-10%" y="-10%" width="120%" height="120%">
-              <feGaussianBlur stdDeviation="0" />
-            </filter>
-          ))}
-        </defs>
         <path
           ref={drawRef}
           d={line.d}
@@ -148,28 +126,24 @@ export default function ScrollLine({
           strokeLinecap="square"
           strokeLinejoin="round"
         />
-        {/* The focusing tip: blue segments, each a little more transparent and
-            (by group) more blurred, butt-capped so they meet edge to edge. */}
+        {/* The focusing tip: blue segments, each fainter and wider than the
+            last, butt-capped so they meet edge to edge without overlapping. */}
         <g ref={tailRef}>
-          {Array.from({ length: BLUR_LEVELS }, (_, k) => (
-            <g key={k} filter={`url(#${blurId}-${k})`}>
-              {Array.from({ length: TAIL_STEPS }, (_, i) => i)
-                .filter((i) => levelOf(i) === k)
-                .map((i) => (
-                  <path
-                    key={i}
-                    data-i={i}
-                    d={line.d}
-                    stroke="#001fff"
-                    strokeOpacity={(1 - (i + 0.5) / TAIL_STEPS) ** 1.4}
-                    strokeWidth={line.strokeWidth}
-                    strokeLinecap="butt"
-                    strokeLinejoin="round"
-                    style={{ strokeDasharray: `0 ${1e6}` }}
-                  />
-                ))}
-            </g>
-          ))}
+          {Array.from({ length: TAIL_STEPS }, (_, i) => {
+            const t = (i + 0.5) / TAIL_STEPS; // 0 next to the solid line, 1 at the tip
+            return (
+              <path
+                key={i}
+                d={line.d}
+                stroke="#001fff"
+                strokeOpacity={((1 - t) ** 1.6 / (1 + (MAX_SPREAD - 1) * t ** 1.2)).toFixed(3)}
+                strokeWidth={line.strokeWidth * (1 + (MAX_SPREAD - 1) * t ** 1.2)}
+                strokeLinecap="butt"
+                strokeLinejoin="round"
+                style={{ strokeDasharray: `0 ${1e6}` }}
+              />
+            );
+          })}
         </g>
       </svg>
     </div>

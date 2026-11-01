@@ -182,7 +182,7 @@ export default function MobileCanvas({ variant }: { variant: HomeVariant }) {
           />
         ))}
         {/* The blue glow at the top of the page, under the header */}
-        {variant.glow && <TopGlow unit={u} frame={FRAME} scale={0.6} />}
+        {variant.glow && <TopGlow unit={u} frame={FRAME} scale={0.6} tall={1.35} />}
 
         {/* Holds the height of the absolutely placed hero and cards. */}
         <div aria-hidden style={{ height: y(CARDS_END) }} />
@@ -222,6 +222,20 @@ export default function MobileCanvas({ variant }: { variant: HomeVariant }) {
           </p>
           <ArrowIcon glyph="down" style={{ width: u(16), height: u(16) }} />
         </div>
+
+        {/* Hairline under "Recent work", stroke to stroke (as the case pages'
+            "More works" has), between it and the first card. */}
+        <span
+          aria-hidden
+          className="rise absolute bg-line"
+          style={{
+            left: `calc(${u(GRID_LINES[0])} - ${GRID_STROKE / 2}px)`,
+            width: `calc(${u(GRID_LINES[GRID_LINES.length - 1] - GRID_LINES[0])} + ${GRID_STROKE}px)`,
+            top: y(RECENT_WORK + 22),
+            height: `${GRID_STROKE}px`,
+            ...introStyle("recentWork"),
+          }}
+        />
 
         {/* Project cards — only the first one peeks above the fold at load, so
             only it joins the hero entrance. */}

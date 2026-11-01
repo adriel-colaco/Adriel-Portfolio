@@ -37,22 +37,27 @@ export default function TopGlow({
   frame,
   scale,
   spread = scale,
+  tall = 1,
 }: {
   unit: (px: number) => string;
   frame: number;
   scale: number;
   /** How far apart the lights sit (default: `scale`, the exact composition). */
   spread?: number;
+  /** Stretches the composition downward (positions and heights, not the blur),
+   *  so the glow reaches further down the page without getting any harder. */
+  tall?: number;
 }) {
   // Design px → the canvas's px: scaled about the design's centre line, which
   // lands on the canvas's centre line.
   const x = (px: number) => unit(frame / 2 + (px - DESIGN / 2) * spread);
   const d = (px: number) => unit(px * scale);
+  const v = (px: number) => d(px * tall);
   return (
     <div
       aria-hidden
       className="top-glow pointer-events-none absolute inset-x-0"
-      style={{ top: d(-ABOVE), height: d(BOX + ABOVE), "--glow-above": `${((ABOVE * 100) / (BOX + ABOVE)).toFixed(2)}%` } as CSSProperties}
+      style={{ top: v(-ABOVE), height: v(BOX + ABOVE), "--glow-above": `${((ABOVE * 100) / (BOX + ABOVE)).toFixed(2)}%` } as CSSProperties}
     >
       {LIGHTS.map((l, i) => (
         <div
@@ -61,9 +66,9 @@ export default function TopGlow({
           style={
             {
               left: x(l.x),
-              top: d(l.y + ABOVE),
+              top: v(l.y + ABOVE),
               width: d(l.rx * 2),
-              height: d(l.ry * 2),
+              height: v(l.ry * 2),
               backgroundColor: l.c,
               filter: `blur(${d(BLUR)})`,
               "--wander": `top-glow-wander-${l.wander}`,

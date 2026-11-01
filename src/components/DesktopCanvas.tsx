@@ -215,7 +215,7 @@ export default function DesktopCanvas({ variant }: { variant: HomeVariant }) {
           />
         ))}
         {/* The blue glow at the top of the page, under the header (v1) */}
-        {variant.glow && <TopGlow height={u(320)} />}
+        {variant.glow && <TopGlow unit={u} frame={FRAME} scale={1} />}
 
         {/* Heading + CTA as one block over columns 2–3, centred (Figma 0:14) — vertically in
             the space between the fixed header and the first card row. In v2

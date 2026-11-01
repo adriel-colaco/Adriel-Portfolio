@@ -11,7 +11,15 @@ const ticks = new Set<Tick>();
 let running = false;
 
 function loop() {
-  ticks.forEach((fn) => fn());
+  // One subscriber failing (say, an element gone mid-frame) mustn't stop the
+  // loop for everyone else — every scroll-driven effect on the page runs here.
+  ticks.forEach((fn) => {
+    try {
+      fn();
+    } catch (err) {
+      console.error(err);
+    }
+  });
   if (ticks.size === 0) {
     running = false;
     return;

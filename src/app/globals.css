@@ -103,15 +103,20 @@
   }
 }
 
-/* The body carries the canvas; the root paints the area a rubber-band scroll
-   uncovers past either end of the page. On a page with the top glow (the
-   home) that's the brand blue, so it continues the glow above and the blue
-   footer below instead of flashing a light bar; elsewhere, the canvas. */
+/* The root paints the area a rubber-band scroll uncovers past either end of
+   the page: the canvas. (On the home, the top glow reaches above the page's
+   top edge itself, so pulling past the top uncovers the glow, TopGlow.) */
 html {
   background-color: var(--canvas);
 }
-html:has(.top-glow) {
-  background-color: #001fff;
+
+/* Nothing may widen the page sideways: blurred hero words carry padding past
+   their box (so Safari doesn't cut their blur), the top glow's lights run past
+   the edges. `clip`, not `hidden`, so no scroll container is made (the pinned
+   and sticky effects keep working). */
+html,
+body {
+  overflow-x: clip;
 }
 
 body {
@@ -284,24 +289,20 @@ body {
   background-color: #e0e0e0 !important;
 }
 
-/* Footer contact pills: hovering — or the cursor magnet grabbing them, like the
-   menu button — fills them off-white with blue text + icons (icons inherit via
-   currentColor). */
+/* Footer contact pills: the hero CTA's hover (.hero-cta-glow and the label
+   swap, below) in the footer's colours — an off-white glow rising over the
+   blue, the off-white label and icon swapping for blue ones (icons inherit via
+   currentColor). Also while the cursor magnet holds them. */
 .footer-pill {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   color: #e0e0e0;
   border-color: #e0e0e0;
   background-color: transparent;
-  transition:
-    scale var(--dur-ui) var(--ease-ui),
-    background-color var(--dur-hover) var(--ease-fade),
-    color var(--dur-hover) var(--ease-fade),
-    border-color var(--dur-hover) var(--ease-fade);
-}
-.footer-pill:hover,
-.footer-pill[data-magnet-active] {
-  background-color: #e0e0e0;
-  color: #001fff;
-  border-color: #e0e0e0;
+  --glow-fill: #e0e0e0;
+  --glow-text: #001fff;
+  transition: scale var(--dur-ui) var(--ease-ui);
 }
 
 /* The closed header pill (Navbar): glass, after liquid-glass-studio — the
@@ -398,7 +399,7 @@ body {
   );
 }
 .hero-cta-glow {
-  background-color: #001fff;
+  background-color: var(--glow-fill, #001fff);
   --cta-glow: 0;
   /* The soft edge eases out (several stops) instead of fading linearly, which
      would leave a visible rim where it ends. */
@@ -412,8 +413,7 @@ body {
     --cta-glow 0.9s var(--ease-fade),
     opacity 0s linear 0.9s;
 }
-.hero-cta:hover .hero-cta-glow,
-.hero-cta[data-magnet-active] .hero-cta-glow {
+:is(.hero-cta, .footer-pill):is(:hover, [data-magnet-active]) .hero-cta-glow {
   --cta-glow: 1;
   opacity: 1;
   transition:
@@ -422,19 +422,19 @@ body {
 }
 /* Touch screens: no hover state, so a tap can't leave the pill stuck blue. */
 @media (hover: none) {
-  .hero-cta .hero-cta-glow {
+  :is(.hero-cta, .footer-pill) .hero-cta-glow {
     opacity: 0 !important;
   }
-  .hero-cta .hero-cta-dark > * {
+  :is(.hero-cta, .footer-pill) .hero-cta-dark > * {
     opacity: 1 !important;
     translate: none !important;
   }
-  .hero-cta .hero-cta-white > * {
+  :is(.hero-cta, .footer-pill) .hero-cta-white > * {
     opacity: 0 !important;
   }
 }
 .hero-cta-light {
-  color: #ffffff;
+  color: var(--glow-text, #ffffff);
 }
 /* The labels swap as the glow comes in: the dark label and icon shoot up out
    of the pill (accelerating away), while the white ones glide up into place
@@ -470,8 +470,7 @@ body {
   --fade-lag: 0.1s;
 }
 /* Hover: dark out first, white in once the glow has covered the label. */
-.hero-cta:hover .hero-cta-dark > *,
-.hero-cta[data-magnet-active] .hero-cta-dark > * {
+:is(.hero-cta, .footer-pill):is(:hover, [data-magnet-active]) .hero-cta-dark > * {
   opacity: 0;
   translate: 0 -160%;
   --swap-delay: calc(0.05s + var(--swap-stagger, 0s));
@@ -479,8 +478,7 @@ body {
   --swap-ease: cubic-bezier(0.6, 0, 0.8, 0.3);
   --fade-lag: 0.1s;
 }
-.hero-cta:hover .hero-cta-white > *,
-.hero-cta[data-magnet-active] .hero-cta-white > * {
+:is(.hero-cta, .footer-pill):is(:hover, [data-magnet-active]) .hero-cta-white > * {
   opacity: 1;
   translate: 0 0;
   --swap-delay: calc(0.3s + var(--swap-stagger, 0s));
@@ -497,24 +495,35 @@ body {
   }
 }
 
-/* The top glow (TopGlow): the brand blue pooled at the top of the page,
-   under the header, fading down into the canvas. It belongs to the page, not
-   the screen: it scrolls away with the hero. It fades in once the page is up
-   (held while the loader covers it), a beat after the header drops in. */
+/* The top glow (TopGlow, Figma 1:103): screen light spilling onto the top of
+   the page, like a MacBook's display lighting the desk — four heavily blurred
+   ellipses, two brand blue and two orange (#ff6a00), sitting just above the
+   page's top edge. Each one wanders on its own irregular loop (position, size
+   and brightness, at different, unrelated speeds), so together they shift
+   like the reflection of a video playing. It belongs to the page, not the screen: it scrolls
+   away with the hero. It fades in once the page is up (held while the loader
+   covers it), a beat after the header drops in. */
 .top-glow {
-  /* Eased stops (an ease-out falloff), so it melts into the canvas with no
-     visible edge. */
-  background: linear-gradient(
+  overflow: hidden;
+  /* The curve — high in the middle, lower at the sides — comes from the
+     lights themselves, as in the Figma. This fade only makes sure their
+     blur's last faint tail (which the browser cuts off at three standard
+     deviations, as a hard ring) reaches nothing before it's cut: it eases to
+     clear well above that ring and the box's foot. (Its stops are measured
+     from the page's top edge: the box starts --glow-above higher, TopGlow.) */
+  --glow-fade: linear-gradient(
     to bottom,
-    rgb(0 31 255 / 1) 0%,
-    rgb(0 31 255 / 0.86) 10%,
-    rgb(0 31 255 / 0.68) 22%,
-    rgb(0 31 255 / 0.48) 36%,
-    rgb(0 31 255 / 0.3) 51%,
-    rgb(0 31 255 / 0.16) 66%,
-    rgb(0 31 255 / 0.06) 82%,
-    rgb(0 31 255 / 0) 100%
+    #000 0%,
+    #000 calc(var(--glow-above) + (100% - var(--glow-above)) * 0.34),
+    rgb(0 0 0 / 0.85) calc(var(--glow-above) + (100% - var(--glow-above)) * 0.44),
+    rgb(0 0 0 / 0.62) calc(var(--glow-above) + (100% - var(--glow-above)) * 0.54),
+    rgb(0 0 0 / 0.38) calc(var(--glow-above) + (100% - var(--glow-above)) * 0.63),
+    rgb(0 0 0 / 0.18) calc(var(--glow-above) + (100% - var(--glow-above)) * 0.71),
+    rgb(0 0 0 / 0.06) calc(var(--glow-above) + (100% - var(--glow-above)) * 0.78),
+    transparent calc(var(--glow-above) + (100% - var(--glow-above)) * 0.84)
   );
+  -webkit-mask-image: var(--glow-fade);
+  mask-image: var(--glow-fade);
   animation: top-glow-in 1.6s var(--ease-fade) 0.5s backwards;
 }
 @keyframes top-glow-in {
@@ -522,8 +531,60 @@ body {
     opacity: 0;
   }
 }
+/* A whisper of grain over the glow: dithers the long, shallow gradients so
+   they don't band into visible contour rings on 8-bit screens. */
+.top-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.18;
+}
+/* One light: a solid ellipse under a Gaussian blur, exactly as the Figma
+   draws it. The blur is rendered once into the light's own layer; only its
+   transform and opacity animate, so it isn't re-blurred every frame. */
+.top-glow-light {
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: 50%;
+  animation:
+    var(--wander) var(--wd) ease-in-out infinite alternate,
+    top-glow-flicker var(--fd) ease-in-out infinite;
+  animation-delay: var(--delay), var(--delay);
+  will-change: transform, opacity;
+}
+@keyframes top-glow-flicker {
+  0% { opacity: 1; }
+  24% { opacity: 0.84; }
+  47% { opacity: 0.96; }
+  71% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+@keyframes top-glow-wander-a {
+  0% { transform: translate(0, 0) scale(1); }
+  23% { transform: translate(8%, 3%) scale(1.05); }
+  51% { transform: translate(-4%, -2%) scale(0.97); }
+  78% { transform: translate(11%, 2%) scale(1.07); }
+  100% { transform: translate(3%, -1%) scale(1); }
+}
+@keyframes top-glow-wander-b {
+  0% { transform: translate(0, 0) scale(1); }
+  31% { transform: translate(-10%, 3%) scale(1.06); }
+  57% { transform: translate(5%, -3%) scale(0.95); }
+  82% { transform: translate(-6%, 1%) scale(1.04); }
+  100% { transform: translate(-2%, 2%) scale(0.98); }
+}
+@keyframes top-glow-wander-c {
+  0% { transform: translate(0, 0) scale(1); }
+  27% { transform: translate(12%, -2%) scale(0.96); }
+  49% { transform: translate(6%, 4%) scale(1.08); }
+  74% { transform: translate(-5%, -1%) scale(1.01); }
+  100% { transform: translate(9%, 2%) scale(0.97); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .top-glow {
+  .top-glow,
+  .top-glow-light {
     animation: none;
   }
 }
@@ -586,11 +647,7 @@ body {
 }
 .footer-pill:active {
   scale: 0.97;
-  transition:
-    scale 0.1s ease-out,
-    background-color var(--dur-hover) var(--ease-fade),
-    color var(--dur-hover) var(--ease-fade),
-    border-color var(--dur-hover) var(--ease-fade);
+  transition: scale 0.1s ease-out;
 }
 
 /* Reduced transparency: the glass turns solid, and the scroll-edge blur under

@@ -4,31 +4,33 @@ import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef } from "react";
 import { subscribe, prefersReducedMotion } from "./parallaxTicker";
 
-// Scroll window (as fractions of the viewport height) over which the letters fill.
+// Scroll window (as fractions of the viewport height) over which the letters appear.
 // Exported so the line can chain off it and start exactly when the text is done.
 export const QUOTE_START = 0.95; // fill begins when the text top sits this high (earlier in the scroll; the line chains off this so it starts sooner too)
 export const QUOTE_SPAN = 0.75; // …and completes this much scrolling later
 
-// Letter colour interpolates from the grey used across the grid to the ink blue.
-const EMPTY = [212, 212, 216]; // #d4d4d8
-const FILL = [0, 31, 255]; // --ink
-// Each letter eases grey→blue over this many letters' worth of scroll, so the
-// fill's leading edge is a short soft sweep rather than a hard letter-by-letter cut.
-const SOFTNESS = 3;
+// Each letter takes this many letters' worth of scroll to come into focus, so
+// while one starts to appear the dozen before it are still clearing — a long,
+// soft sweep rather than a letter-by-letter cut.
+const SOFTNESS = 14;
+// A letter comes in where it stands — no travel, no scale — just out of a blur
+// and into full opacity, so the sentence reads as coming into focus.
+const BLUR = 10; // px, at the start
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const mix = (t: number) =>
-  `rgb(${Math.round(lerp(EMPTY[0], FILL[0], t))}, ${Math.round(
-    lerp(EMPTY[1], FILL[1], t),
-  )}, ${Math.round(lerp(EMPTY[2], FILL[2], t))})`;
+/** A letter `t` (0–1) of the way in: eased, so it settles rather than stops. */
+function letterStyle(s: HTMLElement, t: number) {
+  const e = 1 - (1 - t) ** 3; // ease-out
+  s.style.opacity = e.toFixed(3);
+  s.style.filter = e < 0.995 ? `blur(${(BLUR * (1 - e)).toFixed(2)}px)` : "";
+}
 
 /**
- * The quote. It's simply there, grey (no entrance of its own); as it scrolls
- * up the blue sweeps through it left to right, one letter after another,
- * scrubbed by scroll position. The fill is spread over most of a viewport of
- * scrolling so its pace reads as tied to the scroll rather than snapping. Every
- * "i" is set in italic (the site's flourish). Under reduced motion the text is
- * simply blue.
+ * The quote, written out by the scroll: as it scrolls up, its letters come in
+ * left to right, one after another — each coming into focus where it stands,
+ * out of a blur — scrubbed by scroll position. The
+ * sweep is spread over most of a viewport of scrolling so its pace reads as
+ * tied to the scroll rather than snapping. Every "i" is set in italic (the
+ * site's flourish). Under reduced motion the text is simply there.
  *
  * A "\n" in `text` forces a line break there (each line then never wraps), for
  * when the line breaks must match the design exactly rather than depend on the
@@ -52,11 +54,12 @@ export default function ScrollQuote({
     const letters = Array.from(el.querySelectorAll<HTMLElement>("[data-letter]"));
 
     if (prefersReducedMotion()) {
-      letters.forEach((s) => (s.style.color = mix(1)));
+      letters.forEach((s) => letterStyle(s, 1));
       return;
     }
 
     let cur = 0;
+    let drawn = -1;
     const unsubscribe = subscribe(() => {
       const r = el.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
@@ -67,10 +70,12 @@ export default function ScrollQuote({
       );
       cur += (target - cur) * 0.1; // gentle smoothing on top of the scrub
       if (Math.abs(target - cur) < 0.001) cur = target;
+      if (cur === drawn) return; // nothing moved: leave the letters be
+      drawn = cur;
       const n = letters.length;
       letters.forEach((s, i) => {
         const t = Math.max(0, Math.min(1, (cur * (n + SOFTNESS) - i) / SOFTNESS));
-        s.style.color = mix(t);
+        letterStyle(s, t);
       });
     });
     return unsubscribe;
@@ -84,11 +89,15 @@ export default function ScrollQuote({
           const words = line.split(" ");
           const content = words.map((word, w) => (
             <Fragment key={w}>
-              {Array.from(word).map((char, c) => (
-                <span key={c} data-letter style={{ color: mix(0) }}>
-                  {char === "i" || char === "í" ? <em className="italic">{char}</em> : char}
-                </span>
-              ))}
+              {/* A word never breaks: its letters (each its own box, to blur
+                  separately) are kept together on one line. */}
+              <span className="inline-block whitespace-nowrap">
+                {Array.from(word).map((char, c) => (
+                  <span key={c} data-letter className="inline-block text-ink" style={{ opacity: 0 }}>
+                    {char === "i" || char === "í" ? <em className="italic">{char}</em> : char}
+                  </span>
+                ))}
+              </span>
               {w < words.length - 1 ? " " : null}
             </Fragment>
           ));

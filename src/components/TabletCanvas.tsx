@@ -253,7 +253,7 @@ export default function TabletCanvas({ variant }: { variant: HomeVariant }) {
           />
         ))}
         {/* The blue glow at the top of the page, under the header */}
-        {variant.glow && <TopGlow height={u(360)} />}
+        {variant.glow && <TopGlow unit={u} frame={FRAME} scale={0.75} />}
 
         {/* Holds the height of the absolutely placed hero and cards. */}
         <div aria-hidden style={{ height: y(CARDS_END) }} />

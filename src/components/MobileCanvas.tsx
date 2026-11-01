@@ -182,7 +182,7 @@ export default function MobileCanvas({ variant }: { variant: HomeVariant }) {
           />
         ))}
         {/* The blue glow at the top of the page, under the header */}
-        {variant.glow && <TopGlow height={u(260)} />}
+        {variant.glow && <TopGlow unit={u} frame={FRAME} scale={0.6} />}
 
         {/* Holds the height of the absolutely placed hero and cards. */}
         <div aria-hidden style={{ height: y(CARDS_END) }} />

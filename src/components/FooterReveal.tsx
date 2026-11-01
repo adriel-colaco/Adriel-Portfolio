@@ -614,12 +614,9 @@ function TabletPill({
       className={`footer-pill flex h-full flex-1 items-center justify-center rounded-full border font-serif will-change-transform ${enter.className}`}
       style={enter.style}
     >
-      <span className="flex items-center" style={{ gap: ut(20) }}>
-        <span className="whitespace-nowrap" style={{ fontSize: ut(45), lineHeight: 1 }}>
-          <ItalicI>{label}</ItalicI>
-        </span>
+      <PillSwap label={label} fontSize={ut(45)} gap={ut(20)}>
         {children}
-      </span>
+      </PillSwap>
     </a>
   );
 }
@@ -639,6 +636,44 @@ function FooterSocials({ scale }: { scale: string }) {
   );
 }
 
+/**
+ * A footer pill's insides, with the hero CTA's hover (globals.css): the
+ * off-white label and icon, the off-white glow that rises over the pill, and a
+ * blue copy of the label and icon that swaps in on top of it.
+ */
+function PillSwap({
+  label,
+  fontSize,
+  gap,
+  padLeft,
+  children,
+}: {
+  label: string;
+  fontSize: string;
+  gap: string;
+  /** The pill's own left padding, repeated on the overlay so the copies line up. */
+  padLeft?: string;
+  children: ReactNode;
+}) {
+  const content = (className: string) => (
+    <span className={`${className} flex items-center`} style={{ gap }}>
+      <span className="whitespace-nowrap" style={{ fontSize, lineHeight: 1 }}>
+        <ItalicI>{label}</ItalicI>
+      </span>
+      {children}
+    </span>
+  );
+  return (
+    <>
+      {content("hero-cta-dark")}
+      <span aria-hidden className="hero-cta-glow" />
+      <span aria-hidden className="hero-cta-light justify-center" style={{ paddingLeft: padLeft }}>
+        {content("hero-cta-white")}
+      </span>
+    </>
+  );
+}
+
 function MobilePill({
   href,
   label,
@@ -653,12 +688,11 @@ function MobilePill({
       href={href}
       {...externalProps(href)}
       className="footer-pill flex items-center justify-center rounded-full border font-serif"
-      style={{ height: um(92), gap: um(12) }}
+      style={{ height: um(92) }}
     >
-      <span className="whitespace-nowrap" style={{ fontSize: um(32), lineHeight: 1 }}>
-        <ItalicI>{label}</ItalicI>
-      </span>
-      {children}
+      <PillSwap label={label} fontSize={um(32)} gap={um(12)}>
+        {children}
+      </PillSwap>
     </a>
   );
 }
@@ -674,26 +708,21 @@ function ContactPill({
   children: ReactNode;
   enter: Entrance;
 }) {
-
-  // `footer-pill` (globals.css) does the hover/cursor-magnet colour swap; the
-  // icon uses currentColor so text + icon flip to blue together. `data-cursor-
+  // The hover (and the cursor magnet's hold) is the hero CTA's glow and label
+  // swap, in the footer's colours (PillSwap, `.footer-pill`). `data-cursor-
   // magnet` makes the trailing dot magnet into it, like the menu button.
   return (
     <a
       href={href}
       {...externalProps(href)}
       data-cursor-magnet
-      // The whole pill (border + icon + label) enters on reveal; its hover
-      // colour fade comes from `.footer-pill`.
+      // The whole pill (border + icon + label) enters on reveal.
       className={`footer-pill flex h-full flex-1 items-center justify-center rounded-full border font-serif will-change-transform ${enter.className}`}
       style={{ paddingLeft: u(10), paddingBlock: u(36), ...enter.style }}
     >
-      <span className="flex items-center" style={{ gap: u(20) }}>
-        <span className="whitespace-nowrap" style={{ fontSize: u(42), lineHeight: 1 }}>
-          <ItalicI>{label}</ItalicI>
-        </span>
+      <PillSwap label={label} fontSize={u(42)} gap={u(20)} padLeft={u(10)}>
         {children}
-      </span>
+      </PillSwap>
     </a>
   );
 }

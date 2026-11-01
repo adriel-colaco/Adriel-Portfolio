@@ -84,7 +84,7 @@ const GAP = 20; // desktop gap between blocks
 const GRID_STROKE = 1.5;
 const GRID = [20, 365, 720, 1075, 1420];
 const INSET = 10;
-const INNER_W = CONTENT_W - 2 * INSET; // desktop content width: 1380
+const BLEED_W = 1440; // the image rows: the screen's full width
 // "More works": the title column, then the three cards, each 10px inside its
 // grid strokes (the outer columns lose 10px to the margin stroke).
 const WORK_COLS = [325, 335, 335, 325];
@@ -341,12 +341,14 @@ function CaseDesktop({ data }: { data: Case }) {
           </div>
         </div>
 
-        {/* Image blocks, row by row, edge to edge (no gaps between them, as on Behance) */}
-        <div className="relative flex flex-col" style={{ marginTop: u(GAP) }}>
+        {/* Image blocks, row by row, edge to edge (no gaps between them, as on
+            Behance) and full bleed: out past the content's inset to the
+            screen's sides. */}
+        <div className="relative flex flex-col" style={{ marginTop: u(GAP), marginInline: `-${u(GRID[0] + INSET)}` }}>
           {data.rows.map((row, r) => {
             const n = row.images.length;
-            const cellW = INNER_W / n;
-            const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * INNER_W) / CONTENT_W + (isPadded(row) ? 2 * PAD_DESKTOP : 0);
+            const cellW = BLEED_W / n;
+            const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * BLEED_W) / CONTENT_W + (isPadded(row) ? 2 * PAD_DESKTOP : 0);
             return (
               <div key={r} className="flex" style={{ height: u(height) }}>
                 {row.images.map((block, i) => (
@@ -409,7 +411,6 @@ function CaseDesktop({ data }: { data: Case }) {
 // straight under the title box, one curtain, as on mobile — side by side they
 // would be too narrow for the longer facts), the blocks at the full content
 // width with their desktop proportions, then "More works" on the 2 columns.
-const CONTENT_W_T = 760; // 10px inside the margin strokes
 const GRID_T = [20, 410, 800];
 const COL_W_T = 370; // a "More works" card, 10px inside its strokes
 const TITLE_SIZE_TABLET = 64;
@@ -467,12 +468,13 @@ function CaseTablet({ data }: { data: Case }) {
             </dl>
           </div>
 
-          {/* Image blocks, row by row and edge to edge: the desktop's rows scaled to the content width */}
-          <div className="flex flex-col">
+          {/* Image blocks, row by row and edge to edge: the desktop's rows
+              scaled to the screen's full width (full bleed) */}
+          <div className="flex flex-col" style={{ marginInline: `-${ut(GRID_T[0] + INSET)}` }}>
             {data.rows.map((row, r) => {
               const n = row.images.length;
-              const cellW = CONTENT_W_T / n;
-              const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_T) / CONTENT_W + (isPadded(row) ? 2 * PAD_TABLET : 0);
+              const cellW = 820 / n;
+              const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * 820) / CONTENT_W + (isPadded(row) ? 2 * PAD_TABLET : 0);
               return (
                 <div key={r} className="flex" style={{ height: ut(height) }}>
                   {row.images.map((block, i) => (
@@ -586,16 +588,16 @@ function CaseMobile({ data }: { data: Case }) {
               </dl>
           </div>
 
-          {/* Image blocks, stacked edge to edge */}
-          <div className="flex flex-col">
+          {/* Image blocks, stacked edge to edge, full bleed (the screen's width) */}
+          <div className="flex flex-col" style={{ marginInline: `-${um(GRID_M[0] + INSET)}` }}>
             {data.rows.flatMap((row, r) => {
               const n = row.images.length;
               const cellW = CONTENT_W / n;
-              const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * CONTENT_W_M) / cellW + (isPadded(row) ? 2 * PAD_MOBILE : 0);
+              const height = ((row.height ?? DEFAULT_ROW_HEIGHT) * 360) / cellW + (isPadded(row) ? 2 * PAD_MOBILE : 0);
               return row.images.map((block, i) => (
                 <Block key={blockKey(block)} first={r === 0 && i === 0} className="relative w-full overflow-hidden" style={{ height: um(height), backgroundColor: isPadded(row) ? "#fff" : BLOCK_BG }}>
                   <Inset pad={isPadded(row) ? um(PAD_MOBILE) : undefined}>
-                    <BlockMedia block={block} sizes="89vw" />
+                    <BlockMedia block={block} sizes="100vw" />
                   </Inset>
                 </Block>
               ));
